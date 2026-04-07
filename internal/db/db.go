@@ -32,9 +32,9 @@ func (d *DB) Get(key []byte) ([]byte, error) {
 	return val, err
 }
 
-func (d *DB) Set(key, val []byte) error {
+func (d *DB) Set(key, value []byte) error {
 	return d.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, val)
+		return txn.Set(key, value)
 	})
 }
 
@@ -44,8 +44,31 @@ func (d *DB) Delete(key []byte) error {
 	})
 }
 
-func (d *DB) NewTransaction(update bool) *badger.Txn {
-	return d.db.NewTransaction(update)
+func (d *DB) ForEach(fn func(key, value []byte) error) error {
+	txn := d.db.NewTransaction(false) // read only transaction
+	defer txn.Discard()
+
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+
+	// basically the same as iterating over a map, but with badger's iterator
+	// it's very weird but it's like doing for k, v := range someMap or for k, v in some_map.items() in python
+	// items() in python is actually returning an iterator, so it's basically the same thing
+	for it.Rewind(); it.Valid(); it.Next() {
+		item := it.Item()
+
+		val, err := item.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+
+		// call the provided function with the key and value
+		if err := fn(item.Key(), val); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *DB) Close() error {

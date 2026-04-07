@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -23,6 +24,7 @@ func (h *Handler) ServeRoutes() chi.Router {
 		r.Put("/{key}", h.Set)
 		r.Get("/{key}", h.Get)
 		r.Delete("/{key}", h.Delete)
+		r.Get("/", h.ForEach)
 	})
 
 	return r
@@ -33,12 +35,12 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, &KVResponse{Error: "failed to read body"})
+		writeError(w, http.StatusBadRequest, fmt.Errorf("failed to read request body: %v", err))
 		return
 	}
 
 	if err := h.db.Set([]byte(key), body); err != nil {
-		writeJSON(w, http.StatusInternalServerError, &KVResponse{Error: "failed to set key"})
+		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to set key: %s", key))
 		return
 	}
 
@@ -50,7 +52,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	val, err := h.db.Get([]byte(key))
 	if err != nil {
-		writeJSON(w, http.StatusNotFound, &KVResponse{Error: "key not found"})
+		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
 		return
 	}
 
@@ -61,9 +63,24 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
 	if err := h.db.Delete([]byte(key)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, &KVResponse{Error: "failed to delete key"})
+		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
 		return
 	}
 
 	writeJSON(w, http.StatusNoContent, nil)
+}
+
+func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
+	var results []KVResponse
+
+	err := h.db.ForEach(func(key, value []byte) error {
+		results = append(results, KVResponse{Key: string(key), Value: string(value)})
+		return nil
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to iterate over key-value pairs: %v", err))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, results)
 }
