@@ -57,7 +57,7 @@ func (l *Logger) RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		defer func() {
-			l.Info(r.Context(), "HTTP Request",
+			l.Info(context.Background(), "HTTP Request",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", ww.Status(),
