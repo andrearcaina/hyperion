@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/andrearcaina/hyperion/internal/logger"
 	"github.com/andrearcaina/hyperion/internal/server"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -39,9 +39,12 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			return err
 		}
 
+		logger := logger.New(nil)
+
 		cfg := &server.ServerConfig{
 			Port:   port,
 			DBPath: dbPath,
+			Logger: logger,
 		}
 
 		srv, err := server.NewServer(cfg)
@@ -67,11 +70,11 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 
 		// wait for everything
 		if err := g.Wait(); err != nil {
-			log.Printf("Server exited with error: %v", err)
+			logger.Error(context.Background(), "Server exited with error", "error", err)
 			return err
 		}
 
-		log.Println("Server exited cleanly")
+		logger.Info(context.Background(), "Server exited cleanly")
 		return nil
 	},
 }

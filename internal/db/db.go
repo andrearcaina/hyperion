@@ -13,7 +13,10 @@ func New(path string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{db: db}, nil
+
+	return &DB{
+		db: db,
+	}, nil
 }
 
 func (d *DB) Get(key []byte) ([]byte, error) {

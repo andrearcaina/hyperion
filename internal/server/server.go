@@ -2,23 +2,25 @@ package server
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/andrearcaina/hyperion/internal/db"
+	"github.com/andrearcaina/hyperion/internal/logger"
 	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Server struct {
-	srv *http.Server
-	db  *db.DB
+	srv    *http.Server
+	db     *db.DB
+	logger *logger.Logger
 }
 
 type ServerConfig struct {
 	Port   string
 	DBPath string
+	Logger *logger.Logger
 }
 
 func NewServer(cfg *ServerConfig) (*Server, error) {
@@ -30,11 +32,11 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 	router := chi.NewRouter()
 
 	router.Use(
-		middleware.Logger,
+		cfg.Logger.RequestLogger,
 		middleware.Recoverer,
 	)
 
-	handler := http2.NewHandler(db)
+	handler := http2.NewHandler(db, cfg.Logger)
 	router.Mount("/hypr", handler.ServeRoutes())
 
 	return &Server{
@@ -42,12 +44,14 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 			Addr:    cfg.Port,
 			Handler: router,
 		},
-		db: db,
+		db:     db,
+		logger: cfg.Logger,
 	}, nil
 }
 
 func (s *Server) Run() error {
-	log.Printf("Starting server on %s", s.srv.Addr)
+	s.logger.Info(context.Background(), "Starting server on", "port", s.srv.Addr)
+
 	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
@@ -56,7 +60,7 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) Close(ctx context.Context) error {
-	log.Printf("Shutting down server gracefully...")
+	s.logger.Info(context.Background(), "Shutting down server gracefully...")
 
 	err := s.srv.Shutdown(ctx)
 	if err != nil {
@@ -67,6 +71,6 @@ func (s *Server) Close(ctx context.Context) error {
 		return err
 	}
 
-	log.Printf("Server closed gracefully")
+	s.logger.Info(context.Background(), "Server closed gracefully")
 	return nil
 }
