@@ -54,9 +54,9 @@ func (d *DB) ForEach(fn func(key, value []byte) error) error {
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 
-	// basically the same as iterating over a map, but with badger's iterator
-	// it's very weird but it's like doing for k, v := range someMap or for k, v in some_map.items() in python
-	// items() in python is actually returning an iterator, so it's basically the same thing
+	// this is like doing for i := 0; i < len(db); i++ { ... }
+	// but obviously we don't have a length of db, so we just iterate until there are no more items
+	// the iterator will automatically move to the next item when we call it.Next() (using badger's Iterator API)
 	for it.Rewind(); it.Valid(); it.Next() {
 		item := it.Item()
 
@@ -66,6 +66,7 @@ func (d *DB) ForEach(fn func(key, value []byte) error) error {
 		}
 
 		// call the provided function with the key and value
+		// could be printing them, or processing, etc.
 		if err := fn(item.Key(), val); err != nil {
 			return err
 		}
