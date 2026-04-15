@@ -5,19 +5,19 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
+	"github.com/andrearcaina/hyperion/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
-	db     *db.DB
+	store  *store.Store
 	logger *logger.Logger
 }
 
-func NewHandler(db *db.DB, logger *logger.Logger) *Handler {
+func NewHandler(st *store.Store, logger *logger.Logger) *Handler {
 	return &Handler{
-		db:     db,
+		store:  st,
 		logger: logger,
 	}
 }
@@ -45,7 +45,7 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.db.Set([]byte(key), body); err != nil {
+	if err := h.store.Set(key, body); err != nil {
 		h.logger.Error(r.Context(), "failed to set key", "error", err)
 		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to set key: %s", key))
 		return
@@ -60,7 +60,7 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
-	val, err := h.db.Get([]byte(key))
+	val, err := h.store.Get(key)
 	if err != nil {
 		h.logger.Error(r.Context(), "failed to get key", "error", err)
 		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
@@ -76,7 +76,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
-	if err := h.db.Delete([]byte(key)); err != nil {
+	if err := h.store.Delete(key); err != nil {
 		h.logger.Error(r.Context(), "failed to delete key", "error", err)
 		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
 		return
@@ -88,7 +88,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 	results := []KVResponse{}
 
-	err := h.db.ForEach(func(key, value []byte) error {
+	err := h.store.ForEach(func(key, value []byte) error {
 		results = append(results, KVResponse{
 			Key:   string(key),
 			Value: string(value),

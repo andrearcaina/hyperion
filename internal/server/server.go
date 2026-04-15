@@ -6,6 +6,7 @@ import (
 
 	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
+	"github.com/andrearcaina/hyperion/internal/store"
 	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,17 +15,24 @@ import (
 type Server struct {
 	srv    *http.Server
 	db     *db.DB
+	store  *store.Store
 	logger *logger.Logger
 }
 
 type ServerConfig struct {
-	Port   string
-	DBPath string
-	Logger *logger.Logger
+	Port       string
+	DBPath     string
+	Logger     *logger.Logger
+	NodeConfig store.NodeConfig
 }
 
 func NewServer(cfg *ServerConfig) (*Server, error) {
 	db, err := db.New(cfg.DBPath)
+	if err != nil {
+		return nil, err
+	}
+
+	st, err := store.New(db, cfg.Logger, &cfg.NodeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +44,7 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 		middleware.Recoverer,
 	)
 
-	handler := http2.NewHandler(db, cfg.Logger)
+	handler := http2.NewHandler(st, cfg.Logger)
 	router.Mount("/hypr", handler.ServeRoutes())
 
 	return &Server{
@@ -45,6 +53,7 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 			Handler: router,
 		},
 		db:     db,
+		store:  st,
 		logger: cfg.Logger,
 	}, nil
 }
@@ -64,6 +73,10 @@ func (s *Server) Close(ctx context.Context) error {
 
 	err := s.srv.Shutdown(ctx)
 	if err != nil {
+		return err
+	}
+
+	if err := s.store.Close(); err != nil {
 		return err
 	}
 
