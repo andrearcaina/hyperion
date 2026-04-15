@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -50,19 +51,28 @@ func (s *FSM) Apply(log *raft.Log) interface{} {
 }
 
 func (s *FSM) Snapshot() (raft.FSMSnapshot, error) {
-	data := map[string][]byte{}
+	// create a buffer to hold the snapshot data (instead of writing directly to a map)
+	buf := &bytes.Buffer{}
 
-	if err := s.db.ForEach(func(key, value []byte) error {
-		valCopy := make([]byte, len(value))
-		copy(valCopy, value)
-		data[string(key)] = valCopy
-		return nil
-	}); err != nil {
+	// create a JSON encoder that writes to the buffer
+	enc := json.NewEncoder(buf)
+
+	err := s.db.ForEach(func(key, value []byte) error {
+		return enc.Encode(struct {
+			Key   []byte
+			Value []byte
+		}{
+			Key:   key,
+			Value: value,
+		})
+	})
+	if err != nil {
 		return nil, err
 	}
 
+	// instead of DB -> map -> JSON, we do DB -> JSON directly by using a buffer and encoder
 	return &FSMSnapshot{
-		data: data,
+		data: buf.Bytes(),
 	}, nil
 }
 
@@ -81,20 +91,8 @@ func (s *FSM) Restore(rc io.ReadCloser) error {
 		}
 	}
 
-	keys := make([][]byte, 0, len(data))
-	if err := s.db.ForEach(func(key, _ []byte) error {
-		keyCopy := make([]byte, len(key))
-		copy(keyCopy, key)
-		keys = append(keys, keyCopy)
-		return nil
-	}); err != nil {
+	if err := s.db.Clear(); err != nil {
 		return err
-	}
-
-	for _, key := range keys {
-		if err := s.db.Delete(key); err != nil {
-			return err
-		}
 	}
 
 	for key, value := range data {

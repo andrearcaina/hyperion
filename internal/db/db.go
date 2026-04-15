@@ -75,6 +75,10 @@ func (d *DB) ForEach(fn func(key, value []byte) error) error {
 	return nil
 }
 
+func (d *DB) Clear() error {
+	return d.db.DropAll()
+}
+
 func (d *DB) Close() error {
 	return d.db.Close()
 }

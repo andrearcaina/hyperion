@@ -60,7 +60,7 @@ func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
 		},
 	}
 
-	// bootstraps the current node as the initial leader of the cluster
+	// bootstraps a single-node Raft cluster (no leader is explicitly assigned)
 	if err := r.BootstrapCluster(bootstrap).Error(); err != nil && !errors.Is(err, raft.ErrCantBootstrap) {
 		return nil, err
 	}
