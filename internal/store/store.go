@@ -2,73 +2,30 @@ package store
 
 import (
 	"encoding/json"
-	"errors"
-	"path/filepath"
-	"time"
 
 	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
-	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb/v2"
 )
-
-type NodeConfig struct {
-	NodeID       string
-	ApplyTimeout time.Duration
-	DBPath       string
-}
 
 type Store struct {
 	db   *db.DB
-	raft *raft.Raft
-	cfg  *NodeConfig
+	node *Node
 }
 
 func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
-	raftCfg := raft.DefaultConfig()
-	raftCfg.LocalID = raft.ServerID(cfg.NodeID)
-
-	fsm := NewFSM(db, logger)
-
-	// using BoltDB as the backend for both the log store and stable store
-	// honestly i shouldve used boltdb for data too but i wanted to try out badger for the data store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(cfg.DBPath, "raftbolt.db"))
+	fsm, err := NewFSM(db, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	snapStore, err := raft.NewFileSnapshotStore(cfg.DBPath, 1, nil)
+	node, err := NewNode(fsm, logger, cfg)
 	if err != nil {
-		return nil, err
-	}
-
-	// later on use NewTCPTransport for real network communication between nodes
-	// this is only for testing (single node raft setup)
-	addr, transport := raft.NewInmemTransport(raft.ServerAddress("127.0.0.1:0"))
-
-	r, err := raft.NewRaft(raftCfg, fsm, boltStore, boltStore, snapStore, transport)
-	if err != nil {
-		return nil, err
-	}
-
-	bootstrap := raft.Configuration{
-		Servers: []raft.Server{
-			{
-				ID:      raftCfg.LocalID,
-				Address: addr,
-			},
-		},
-	}
-
-	// bootstraps a single-node Raft cluster (no leader is explicitly assigned)
-	if err := r.BootstrapCluster(bootstrap).Error(); err != nil && !errors.Is(err, raft.ErrCantBootstrap) {
 		return nil, err
 	}
 
 	return &Store{
 		db:   db,
-		raft: r,
-		cfg:  cfg,
+		node: node,
 	}, nil
 }
 
@@ -101,10 +58,10 @@ func (s *Store) applyCommand(cmd command) error {
 		return err
 	}
 
-	future := s.raft.Apply(data, s.cfg.ApplyTimeout)
+	future := s.node.Apply(data)
 	return future.Error()
 }
 
 func (s *Store) Close() error {
-	return s.raft.Shutdown().Error()
+	return s.node.Shutdown()
 }

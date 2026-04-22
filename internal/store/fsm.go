@@ -27,11 +27,19 @@ type FSM struct {
 	logger *logger.Logger
 }
 
-func NewFSM(db *db.DB, logger *logger.Logger) *FSM {
+func NewFSM(db *db.DB, logger *logger.Logger) (*FSM, error) {
+	if db == nil {
+		return nil, fmt.Errorf("db cannot be nil")
+	}
+
+	if logger == nil {
+		return nil, fmt.Errorf("logger cannot be nil")
+	}
+
 	return &FSM{
 		db:     db,
 		logger: logger,
-	}
+	}, nil
 }
 
 func (s *FSM) Apply(log *raft.Log) interface{} {
