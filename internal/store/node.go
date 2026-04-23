@@ -72,6 +72,10 @@ func (n *Node) Apply(data []byte) raft.ApplyFuture {
 	return n.raft.Apply(data, n.cfg.ApplyTimeout)
 }
 
+func (n *Node) GetID() string {
+	return n.cfg.NodeID
+}
+
 func (n *Node) GetState() raft.RaftState {
 	return n.raft.State()
 }
@@ -84,6 +88,6 @@ func (n *Node) IsLeader() bool {
 	return n.raft.State() == raft.Leader
 }
 
-func (n *Node) Shutdown() error {
+func (n *Node) Close() error {
 	return n.raft.Shutdown().Error()
 }

@@ -49,7 +49,7 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 
 		logger := logger.New(nil)
 
-		nodeConfig := store.NodeConfig{
+		nodeConfig := &store.NodeConfig{
 			NodeID:       nodeID,
 			ApplyTimeout: time.Duration(nodeTimeout) * time.Second,
 			DBPath:       raftPath, // path for Raft log and state machine snapshots

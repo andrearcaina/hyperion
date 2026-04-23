@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
@@ -30,7 +31,7 @@ func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
 }
 
 func (s *Store) Set(key string, value []byte) error {
-	return s.applyCommand(command{
+	return s.applyCommand(writeCommand{
 		Op:    commandSet,
 		Key:   key,
 		Value: value,
@@ -38,21 +39,29 @@ func (s *Store) Set(key string, value []byte) error {
 }
 
 func (s *Store) Delete(key string) error {
-	return s.applyCommand(command{
+	return s.applyCommand(writeCommand{
 		Op:  commandDelete,
 		Key: key,
 	})
 }
 
 func (s *Store) Get(key string) ([]byte, error) {
+	if !s.node.IsLeader() {
+		return nil, fmt.Errorf("node %s is not the leader", s.node.GetID())
+	}
+
 	return s.db.Get([]byte(key))
 }
 
 func (s *Store) ForEach(fn func(key, value []byte) error) error {
+	if !s.node.IsLeader() {
+		return fmt.Errorf("node %s is not the leader", s.node.GetID())
+	}
+
 	return s.db.ForEach(fn)
 }
 
-func (s *Store) applyCommand(cmd command) error {
+func (s *Store) applyCommand(cmd writeCommand) error {
 	data, err := json.Marshal(cmd)
 	if err != nil {
 		return err
@@ -63,5 +72,13 @@ func (s *Store) applyCommand(cmd command) error {
 }
 
 func (s *Store) Close() error {
-	return s.node.Shutdown()
+	if err := s.db.Close(); err != nil {
+		return err
+	}
+
+	if err := s.node.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

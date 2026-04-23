@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-type command struct {
+type writeCommand struct {
 	Op    string `json:"op"`
 	Key   string `json:"key"`
 	Value []byte `json:"value,omitempty"`
@@ -43,7 +43,7 @@ func NewFSM(db *db.DB, logger *logger.Logger) (*FSM, error) {
 }
 
 func (s *FSM) Apply(log *raft.Log) interface{} {
-	var cmd command
+	var cmd writeCommand
 	if err := json.Unmarshal(log.Data, &cmd); err != nil {
 		return err
 	}
@@ -87,24 +87,25 @@ func (s *FSM) Snapshot() (raft.FSMSnapshot, error) {
 func (s *FSM) Restore(rc io.ReadCloser) error {
 	defer rc.Close()
 
-	payload, err := io.ReadAll(rc)
-	if err != nil {
-		return err
-	}
-
-	data := map[string][]byte{}
-	if len(payload) > 0 {
-		if err := json.Unmarshal(payload, &data); err != nil {
-			return err
-		}
-	}
+	dec := json.NewDecoder(rc)
 
 	if err := s.db.Clear(); err != nil {
 		return err
 	}
 
-	for key, value := range data {
-		if err := s.db.Set([]byte(key), value); err != nil {
+	for {
+		var entry struct {
+			Key   []byte
+			Value []byte
+		}
+
+		if err := dec.Decode(&entry); err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+
+		if err := s.db.Set(entry.Key, entry.Value); err != nil {
 			return err
 		}
 	}

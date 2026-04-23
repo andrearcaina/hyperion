@@ -14,7 +14,6 @@ import (
 
 type Server struct {
 	srv    *http.Server
-	db     *db.DB
 	store  *store.Store
 	logger *logger.Logger
 }
@@ -23,7 +22,7 @@ type ServerConfig struct {
 	Port       string
 	DBPath     string
 	Logger     *logger.Logger
-	NodeConfig store.NodeConfig
+	NodeConfig *store.NodeConfig
 }
 
 func NewServer(cfg *ServerConfig) (*Server, error) {
@@ -32,7 +31,7 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 		return nil, err
 	}
 
-	st, err := store.New(db, cfg.Logger, &cfg.NodeConfig)
+	st, err := store.New(db, cfg.Logger, cfg.NodeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,6 @@ func NewServer(cfg *ServerConfig) (*Server, error) {
 			Addr:    cfg.Port,
 			Handler: router,
 		},
-		db:     db,
 		store:  st,
 		logger: cfg.Logger,
 	}, nil
@@ -77,10 +75,6 @@ func (s *Server) Close(ctx context.Context) error {
 	}
 
 	if err := s.store.Close(); err != nil {
-		return err
-	}
-
-	if err := s.db.Close(); err != nil {
 		return err
 	}
 
