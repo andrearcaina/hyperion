@@ -11,15 +11,15 @@ import (
 )
 
 type Node struct {
-	raft *raft.Raft
-	cfg  NodeConfig
-	log  *logger.Logger
+	raft   *raft.Raft
+	cfg    NodeConfig
+	logger *logger.Logger
 }
 
 type NodeConfig struct {
 	NodeID       string
+	NodePath     string
 	ApplyTimeout time.Duration
-	DBPath       string
 }
 
 func NewNode(fsm raft.FSM, logger *logger.Logger, cfg *NodeConfig) (*Node, error) {
@@ -28,12 +28,12 @@ func NewNode(fsm raft.FSM, logger *logger.Logger, cfg *NodeConfig) (*Node, error
 
 	// using BoltDB as the backend for both the log store and stable store
 	// honestly i shouldve used boltdb for data too but i wanted to try out badger for the data store
-	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(cfg.DBPath, "raftbolt.db"))
+	boltStore, err := raftboltdb.NewBoltStore(filepath.Join(cfg.NodePath, "raftbolt.db"))
 	if err != nil {
 		return nil, err
 	}
 
-	snapStore, err := raft.NewFileSnapshotStore(cfg.DBPath, 1, nil)
+	snapStore, err := raft.NewFileSnapshotStore(cfg.NodePath, 1, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +62,9 @@ func NewNode(fsm raft.FSM, logger *logger.Logger, cfg *NodeConfig) (*Node, error
 	}
 
 	return &Node{
-		raft: r,
-		cfg:  *cfg,
-		log:  logger,
+		raft:   r,
+		cfg:    *cfg,
+		logger: logger,
 	}, nil
 }
 

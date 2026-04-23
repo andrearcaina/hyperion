@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -9,8 +10,9 @@ import (
 )
 
 type Store struct {
-	db   *db.DB
-	node *Node
+	db     *db.DB
+	node   *Node
+	logger *logger.Logger
 }
 
 func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
@@ -25,8 +27,9 @@ func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
 	}
 
 	return &Store{
-		db:   db,
-		node: node,
+		db:     db,
+		node:   node,
+		logger: logger,
 	}, nil
 }
 
@@ -72,13 +75,16 @@ func (s *Store) applyCommand(cmd writeCommand) error {
 }
 
 func (s *Store) Close() error {
-	if err := s.db.Close(); err != nil {
-		return err
-	}
-
+	s.logger.Info(context.Background(), "Shutting down Raft node gracefully...")
 	if err := s.node.Close(); err != nil {
 		return err
 	}
 
+	s.logger.Info(context.Background(), "Shutting down key-value db gracefully...")
+	if err := s.db.Close(); err != nil {
+		return err
+	}
+
+	s.logger.Info(context.Background(), "Store closed gracefully")
 	return nil
 }

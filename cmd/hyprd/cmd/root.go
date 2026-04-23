@@ -8,9 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
 	"github.com/andrearcaina/hyperion/internal/server"
 	"github.com/andrearcaina/hyperion/internal/store"
+	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -37,11 +39,11 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			return err
 		}
 
-		dbPath := filepath.Join(home, ".hyperion", "data", nodeID)
-		kvPath := filepath.Join(dbPath, "kv")
-		raftPath := filepath.Join(dbPath, "raft")
+		stPath := filepath.Join(home, ".hyperion", "data", nodeID)
+		dbPath := filepath.Join(stPath, "kv")
+		nodePath := filepath.Join(stPath, "raft")
 
-		for _, path := range []string{dbPath, kvPath, raftPath} {
+		for _, path := range []string{stPath, dbPath, nodePath} {
 			if err := os.MkdirAll(path, 0755); err != nil {
 				return err
 			}
@@ -49,20 +51,23 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 
 		logger := logger.New(nil)
 
-		nodeConfig := &store.NodeConfig{
+		db, err := db.New(dbPath)
+		if err != nil {
+			return err
+		}
+
+		store, err := store.New(db, logger, &store.NodeConfig{
 			NodeID:       nodeID,
+			NodePath:     nodePath, // path for Raft log and state machine snapshots
 			ApplyTimeout: time.Duration(nodeTimeout) * time.Second,
-			DBPath:       raftPath, // path for Raft log and state machine snapshots
+		})
+		if err != nil {
+			return err
 		}
 
-		cfg := &server.ServerConfig{
-			Port:       port,
-			DBPath:     kvPath, // path for actual key-value data
-			Logger:     logger,
-			NodeConfig: nodeConfig,
-		}
+		handler := http2.NewHandler(store, logger)
 
-		srv, err := server.NewServer(cfg)
+		srv, err := server.NewServer(port, logger, handler)
 		if err != nil {
 			return err
 		}
@@ -80,7 +85,16 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			<-ctx.Done()
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			return srv.Close(shutdownCtx)
+
+			if err := srv.Close(shutdownCtx); err != nil {
+				return err
+			}
+
+			if err := store.Close(); err != nil {
+				return err
+			}
+
+			return nil
 		})
 
 		// wait for everything
@@ -89,7 +103,7 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			return err
 		}
 
-		logger.Info(context.Background(), "Server exited cleanly")
+		logger.Info(context.Background(), "hyprd exited cleanly")
 		return nil
 	},
 }

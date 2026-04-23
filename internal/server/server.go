@@ -4,9 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
-	"github.com/andrearcaina/hyperion/internal/store"
 	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,45 +12,25 @@ import (
 
 type Server struct {
 	srv    *http.Server
-	store  *store.Store
 	logger *logger.Logger
 }
 
-type ServerConfig struct {
-	Port       string
-	DBPath     string
-	Logger     *logger.Logger
-	NodeConfig *store.NodeConfig
-}
-
-func NewServer(cfg *ServerConfig) (*Server, error) {
-	db, err := db.New(cfg.DBPath)
-	if err != nil {
-		return nil, err
-	}
-
-	st, err := store.New(db, cfg.Logger, cfg.NodeConfig)
-	if err != nil {
-		return nil, err
-	}
-
+func NewServer(port string, logger *logger.Logger, handler *http2.Handler) (*Server, error) {
 	router := chi.NewRouter()
 
 	router.Use(
-		cfg.Logger.RequestLogger,
+		logger.RequestLogger,
 		middleware.Recoverer,
 	)
 
-	handler := http2.NewHandler(st, cfg.Logger)
 	router.Mount("/hypr", handler.ServeRoutes())
 
 	return &Server{
 		srv: &http.Server{
-			Addr:    cfg.Port,
+			Addr:    port,
 			Handler: router,
 		},
-		store:  st,
-		logger: cfg.Logger,
+		logger: logger,
 	}, nil
 }
 
@@ -71,10 +49,6 @@ func (s *Server) Close(ctx context.Context) error {
 
 	err := s.srv.Shutdown(ctx)
 	if err != nil {
-		return err
-	}
-
-	if err := s.store.Close(); err != nil {
 		return err
 	}
 
