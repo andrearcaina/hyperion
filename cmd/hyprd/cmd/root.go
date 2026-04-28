@@ -18,9 +18,11 @@ import (
 )
 
 var (
-	port        string
+	serverPort  string
 	nodeID      string
+	nodeAddr    string
 	nodeTimeout int
+	bootstrap   bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -58,6 +60,7 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 
 		store, err := store.New(db, logger, &store.NodeConfig{
 			NodeID:       nodeID,
+			NodeAddr:     nodeAddr,
 			NodePath:     nodePath, // path for Raft log and state machine snapshots
 			ApplyTimeout: time.Duration(nodeTimeout) * time.Second,
 		})
@@ -65,9 +68,15 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			return err
 		}
 
+		if bootstrap {
+			if err := store.BootstrapCluster(); err != nil {
+				return err
+			}
+		}
+
 		handler := http2.NewHandler(store, logger)
 
-		srv, err := server.NewServer(port, logger, handler)
+		srv, err := server.NewServer(serverPort, logger, handler)
 		if err != nil {
 			return err
 		}
@@ -116,7 +125,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&port, "port", "p", ":8080", "Port to listen on")
-	rootCmd.Flags().StringVarP(&nodeID, "node", "n", "node-1", "Node ID")
-	rootCmd.Flags().IntVarP(&nodeTimeout, "timeout", "t", 5, "Node timeout in seconds")
+	rootCmd.Flags().StringVarP(&serverPort, "srv-port", "p", ":8080", "Port to listen on")
+	rootCmd.Flags().StringVarP(&nodeID, "node-id", "n", "node-1", "Node ID")
+	rootCmd.Flags().StringVarP(&nodeAddr, "node-addr", "a", "127.0.0.1:9001", "Node address")
+	rootCmd.Flags().IntVarP(&nodeTimeout, "node-timeout", "t", 5, "Node timeout in seconds")
+	rootCmd.Flags().BoolVarP(&bootstrap, "bootstrap", "b", false, "Bootstrap the cluster")
 }

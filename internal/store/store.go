@@ -3,10 +3,11 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 
 	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
+	"github.com/hashicorp/raft"
 )
 
 type Store struct {
@@ -48,20 +49,30 @@ func (s *Store) Delete(key string) error {
 	})
 }
 
-func (s *Store) Get(key string) ([]byte, error) {
-	if !s.node.IsLeader() {
-		return nil, fmt.Errorf("node %s is not the leader", s.node.GetID())
-	}
+func (s *Store) Join(nodeID, nodeAddress string) error {
+	return s.node.Join(nodeID, nodeAddress)
+}
 
+func (s *Store) Get(key string) ([]byte, error) {
 	return s.db.Get([]byte(key))
 }
 
 func (s *Store) ForEach(fn func(key, value []byte) error) error {
-	if !s.node.IsLeader() {
-		return fmt.Errorf("node %s is not the leader", s.node.GetID())
+	return s.db.ForEach(fn)
+}
+
+func (s *Store) BootstrapCluster() error {
+	err := s.node.BootstrapCluster()
+	if errors.Is(err, raft.ErrCantBootstrap) {
+		s.logger.Info(context.Background(), "Cluster is already bootstrapped, skipping")
+		return nil
 	}
 
-	return s.db.ForEach(fn)
+	return err
+}
+
+func (s *Store) IsLeader() bool {
+	return s.node.IsLeader()
 }
 
 func (s *Store) applyCommand(cmd writeCommand) error {

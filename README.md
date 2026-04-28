@@ -21,7 +21,7 @@ will do more i promise
 - [x] Create file structure
 - [x] Get working DB and spin HTTP server with `hyprd`
 - [x] Implement Raft for consensus between nodes (single node for now)
-    - [ ] Add support for clustering and replication
+    - [X] Add support for clustering and replication
 - [ ] Implement `hyprctl` CLI to interact with running `hyprd` nodes
 - [ ] Add gRPC API support because why not
-- [ ] Add documentations and useful things I learnt
+- [X] Add documentations and useful things I learnt (upkeep as much as possible)

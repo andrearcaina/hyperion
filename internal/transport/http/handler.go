@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,6 +31,10 @@ func (h *Handler) ServeRoutes() chi.Router {
 		r.Get("/{key}", h.Get)
 		r.Delete("/{key}", h.Delete)
 		r.Get("/", h.ForEach)
+	})
+
+	r.Route("/raft", func(r chi.Router) {
+		r.Post("/join", h.Join)
 	})
 
 	return r
@@ -103,4 +108,27 @@ func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, results)
+}
+
+func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
+	var req JoinRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if !h.store.IsLeader() {
+		writeError(w, http.StatusForbidden, fmt.Errorf("not leader"))
+		return
+	}
+
+	if err := h.store.Join(req.NodeID, req.Address); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "joined",
+	})
 }

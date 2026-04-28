@@ -1,7 +1,9 @@
 package store
 
 import (
-	"errors"
+	"context"
+	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -18,6 +20,7 @@ type Node struct {
 
 type NodeConfig struct {
 	NodeID       string
+	NodeAddr     string
 	NodePath     string
 	ApplyTimeout time.Duration
 }
@@ -38,26 +41,19 @@ func NewNode(fsm raft.FSM, logger *logger.Logger, cfg *NodeConfig) (*Node, error
 		return nil, err
 	}
 
-	// later on use NewTCPTransport for real network communication between nodes
-	// this is only for testing (single node raft setup)
-	addr, transport := raft.NewInmemTransport(raft.ServerAddress("127.0.0.1:0"))
-
-	r, err := raft.NewRaft(raftCfg, fsm, boltStore, boltStore, snapStore, transport)
+	transport, err := raft.NewTCPTransport(
+		cfg.NodeAddr,
+		nil,
+		10,
+		10*time.Second,
+		os.Stderr,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	bootstrap := raft.Configuration{
-		Servers: []raft.Server{
-			{
-				ID:      raftCfg.LocalID,
-				Address: addr,
-			},
-		},
-	}
-
-	// bootstraps a single-node Raft cluster (no leader is explicitly assigned)
-	if err := r.BootstrapCluster(bootstrap).Error(); err != nil && !errors.Is(err, raft.ErrCantBootstrap) {
+	r, err := raft.NewRaft(raftCfg, fsm, boltStore, boltStore, snapStore, transport)
+	if err != nil {
 		return nil, err
 	}
 
@@ -68,26 +64,44 @@ func NewNode(fsm raft.FSM, logger *logger.Logger, cfg *NodeConfig) (*Node, error
 	}, nil
 }
 
-func (n *Node) Apply(data []byte) raft.ApplyFuture {
-	return n.raft.Apply(data, n.cfg.ApplyTimeout)
+func (n *Node) BootstrapCluster() error {
+	config := raft.Configuration{
+		Servers: []raft.Server{
+			{
+				ID:      raft.ServerID(n.cfg.NodeID),
+				Address: raft.ServerAddress(n.cfg.NodeAddr),
+			},
+		},
+	}
+
+	return n.raft.BootstrapCluster(config).Error()
 }
 
-func (n *Node) GetID() string {
-	return n.cfg.NodeID
+func (n *Node) Join(nodeID, nodeAddress string) error {
+	if !n.IsLeader() {
+		return fmt.Errorf("node %s is not the leader", n.GetNodeID())
+	}
+
+	if err := n.AddVoter(nodeID, nodeAddress); err != nil {
+		return err
+	}
+
+	n.logger.Info(context.Background(), "successfully added voter to cluster", "node_id", nodeID, "node_address", nodeAddress)
+	return nil
 }
 
-func (n *Node) GetState() raft.RaftState {
-	return n.raft.State()
+func (n *Node) AddVoter(nodeID, nodeAddress string) error {
+	return n.raft.AddVoter(
+		raft.ServerID(nodeID),
+		raft.ServerAddress(nodeAddress),
+		0,
+		10*time.Second,
+	).Error()
 }
 
-func (n *Node) GetLeader() string {
-	return string(n.raft.Leader())
-}
-
-func (n *Node) IsLeader() bool {
-	return n.raft.State() == raft.Leader
-}
-
-func (n *Node) Close() error {
-	return n.raft.Shutdown().Error()
-}
+// wrappers basically
+func (n *Node) Apply(data []byte) raft.ApplyFuture { return n.raft.Apply(data, n.cfg.ApplyTimeout) }
+func (n *Node) GetNodeID() string                  { return n.cfg.NodeID }
+func (n *Node) GetState() raft.RaftState           { return n.raft.State() }
+func (n *Node) IsLeader() bool                     { return n.GetState() == raft.Leader }
+func (n *Node) Close() error                       { return n.raft.Shutdown().Error() }
