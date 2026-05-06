@@ -43,6 +43,10 @@ func (d *DB) Set(key, value []byte) error {
 
 func (d *DB) Delete(key []byte) error {
 	return d.db.Update(func(txn *badger.Txn) error {
+		if _, err := txn.Get(key); err != nil {
+			return err
+		}
+
 		return txn.Delete(key)
 	})
 }

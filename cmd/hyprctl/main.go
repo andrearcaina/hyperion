@@ -1,7 +1,11 @@
+/*
+Copyright © 2026 NAME HERE <EMAIL ADDRESS>
+
+*/
 package main
 
-import "fmt"
+import "github.com/andrearcaina/hyperion/cmd/hyprctl/cmd"
 
 func main() {
-	fmt.Println("hello world!")
+	cmd.Execute()
 }

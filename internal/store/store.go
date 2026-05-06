@@ -82,7 +82,15 @@ func (s *Store) applyCommand(cmd writeCommand) error {
 	}
 
 	future := s.node.Apply(data)
-	return future.Error()
+	if err := future.Error(); err != nil {
+		return err
+	}
+
+	if respErr, ok := future.Response().(error); ok && respErr != nil {
+		return respErr
+	}
+
+	return nil
 }
 
 func (s *Store) Close() error {

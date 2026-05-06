@@ -10,6 +10,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.80.0
+	resty.dev/v3 v3.0.0-beta.6
 )
 
 require (

@@ -52,7 +52,7 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.Set(key, body); err != nil {
 		h.logger.Error(r.Context(), "failed to set key", "error", err)
-		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to set key: %s", key))
+		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to set key: %s, error: %v", key, err))
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	val, err := h.store.Get(key)
 	if err != nil {
 		h.logger.Error(r.Context(), "failed to get key", "error", err)
-		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
+		writeError(w, http.StatusNotFound, fmt.Errorf("failed to get key: %s, error: %v", key, err))
 		return
 	}
 
@@ -83,7 +83,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.Delete(key); err != nil {
 		h.logger.Error(r.Context(), "failed to delete key", "error", err)
-		writeError(w, http.StatusNotFound, fmt.Errorf("key not found: %s", key))
+		writeError(w, http.StatusNotFound, fmt.Errorf("failed to delete key: %s, error: %v", key, err))
 		return
 	}
 
