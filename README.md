@@ -4,17 +4,15 @@ a Raft-based distributed reliable key-value database
 
 ### Overview
 
-now spins up an HTTP server and a single Raft node (for now)
+now able to spin up multiple HTTP servers with their separate Raft node now
 
 basically how it works is when you start a `hyprd` node, it will create a HTTP server and a Raft store (node)
 
-the HTTP server will listen for incoming requests and forward them to Raft
+the HTTP server will listen for incoming requests (either through `curl` or `hyprctl`) and forward them to Raft
 
-Raft then records those requests as a log entry, and then applies them to the underlying key-value database (BadgerDB)
+Raft then records those requests as a log entry, sends them to other `hyprd` nodes, agrees on a majority and then applies/commits them to the underlying key-value database (BadgerDB)
 
-the Raft node also handles a lot of other things, like snapshots, log replication (to other nodes), and other stuff that I don't really understand yet but will learn eventually
-
-will do more i promise
+for more information on Raft and distributed key value databases check out the [docs](docs/) page
 
 ### Roadmap
 
