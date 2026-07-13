@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
-
-	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/spf13/cobra"
 )
 
@@ -17,28 +14,16 @@ var setCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		var respBody http2.KVResponse
-		var errBody http2.KVResponse
-
-		resp, err := hyprClient.Put(
-			"/hypr/kv/"+url.PathEscape(key),
-			value,
-			&respBody,
-			&errBody,
-		)
+		entry, err := hyprClient.Put(cmd.Context(), key, []byte(value))
 		if err != nil {
 			return err
 		}
 
-		if resp.IsError() {
-			return fmt.Errorf("request failed with status %d: %s", resp.StatusCode(), errBody.Error)
-		}
-
 		if jsonOutput {
-			return printJSON(cmd, respBody)
+			return printJSON(cmd, entry)
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "%s=%s\n", respBody.Key, respBody.Value)
+		fmt.Fprintf(cmd.OutOrStdout(), "%s=%s\n", entry.Key, entry.Value)
 		return nil
 	},
 }

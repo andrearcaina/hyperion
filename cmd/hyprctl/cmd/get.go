@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/url"
-
-	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/spf13/cobra"
 )
 
@@ -17,42 +14,28 @@ var getCmd = &cobra.Command{
 		if len(args) == 1 {
 			key := args[0]
 
-			var body http2.KVResponse
-			var errBody http2.KVResponse
-
-			resp, err := hyprClient.Get("/hypr/kv/"+url.PathEscape(key), &body, &errBody)
+			entry, err := hyprClient.Get(cmd.Context(), key)
 			if err != nil {
 				return err
 			}
 
-			if resp.IsError() {
-				return fmt.Errorf("request failed with status %d: %s", resp.StatusCode(), errBody.Error)
-			}
-
 			if jsonOutput {
-				return printJSON(cmd, body)
+				return printJSON(cmd, entry)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), body.Value)
+			fmt.Fprintln(cmd.OutOrStdout(), string(entry.Value))
 		} else if len(args) == 0 {
-			var body []http2.KVResponse
-			var errBody http2.KVResponse
-
-			resp, err := hyprClient.Get("/hypr/kv/", &body, &errBody)
+			entries, err := hyprClient.List(cmd.Context())
 			if err != nil {
 				return err
 			}
 
-			if resp.IsError() {
-				return fmt.Errorf("request failed with status %d: %s", resp.StatusCode(), errBody.Error)
-			}
-
 			if jsonOutput {
-				return printJSON(cmd, body)
+				return printJSON(cmd, entries)
 			}
 
-			for _, kv := range body {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s=%s\n", kv.Key, kv.Value)
+			for _, entry := range entries {
+				fmt.Fprintf(cmd.OutOrStdout(), "%s=%s\n", entry.Key, entry.Value)
 			}
 		}
 

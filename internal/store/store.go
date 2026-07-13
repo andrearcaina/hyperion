@@ -4,11 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/andrearcaina/hyperion/internal/db"
 	"github.com/andrearcaina/hyperion/internal/logger"
 	"github.com/hashicorp/raft"
 )
+
+var (
+	ErrInvalidKey = errors.New("key must not be empty")
+	ErrNotFound   = db.ErrNotFound
+)
+
+type NotLeaderError struct {
+	NodeID        string
+	LeaderID      string
+	LeaderAddress string
+}
+
+func (e *NotLeaderError) Error() string {
+	if e.LeaderID == "" {
+		return fmt.Sprintf("node %q is not the Raft leader; no leader is known", e.NodeID)
+	}
+
+	return fmt.Sprintf("node %q is not the Raft leader; leader is %q at %s", e.NodeID, e.LeaderID, e.LeaderAddress)
+}
 
 type Store struct {
 	db     *db.DB
@@ -17,7 +37,7 @@ type Store struct {
 }
 
 func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
-	fsm, err := NewFSM(db, logger)
+	fsm, err := NewFSM(db)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +55,10 @@ func New(db *db.DB, logger *logger.Logger, cfg *NodeConfig) (*Store, error) {
 }
 
 func (s *Store) Set(key string, value []byte) error {
+	if key == "" {
+		return ErrInvalidKey
+	}
+
 	return s.applyCommand(writeCommand{
 		Op:    commandSet,
 		Key:   key,
@@ -43,6 +67,10 @@ func (s *Store) Set(key string, value []byte) error {
 }
 
 func (s *Store) Delete(key string) error {
+	if key == "" {
+		return ErrInvalidKey
+	}
+
 	return s.applyCommand(writeCommand{
 		Op:  commandDelete,
 		Key: key,
@@ -54,10 +82,22 @@ func (s *Store) Join(nodeID, nodeAddress string) error {
 }
 
 func (s *Store) Get(key string) ([]byte, error) {
+	if key == "" {
+		return nil, ErrInvalidKey
+	}
+
+	if err := s.node.VerifyLeader(); err != nil {
+		return nil, err
+	}
+
 	return s.db.Get([]byte(key))
 }
 
 func (s *Store) ForEach(fn func(key, value []byte) error) error {
+	if err := s.node.VerifyLeader(); err != nil {
+		return err
+	}
+
 	return s.db.ForEach(fn)
 }
 
@@ -83,6 +123,9 @@ func (s *Store) applyCommand(cmd writeCommand) error {
 
 	future := s.node.Apply(data)
 	if err := future.Error(); err != nil {
+		if errors.Is(err, raft.ErrNotLeader) || errors.Is(err, raft.ErrLeadershipLost) {
+			return s.node.notLeaderError()
+		}
 		return err
 	}
 
@@ -95,15 +138,14 @@ func (s *Store) applyCommand(cmd writeCommand) error {
 
 func (s *Store) Close() error {
 	s.logger.Info(context.Background(), "Shutting down Raft node gracefully...")
-	if err := s.node.Close(); err != nil {
-		return err
-	}
+	nodeErr := s.node.Close()
 
 	s.logger.Info(context.Background(), "Shutting down key-value db gracefully...")
-	if err := s.db.Close(); err != nil {
-		return err
-	}
+	dbErr := s.db.Close()
 
-	s.logger.Info(context.Background(), "Store closed gracefully")
-	return nil
+	err := errors.Join(nodeErr, dbErr)
+	if err == nil {
+		s.logger.Info(context.Background(), "Store closed gracefully")
+	}
+	return err
 }

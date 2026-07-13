@@ -1,8 +1,12 @@
 package db
 
 import (
+	"errors"
+
 	badger "github.com/dgraph-io/badger/v4"
 )
+
+var ErrNotFound = errors.New("key not found")
 
 type DB struct {
 	db *badger.DB // embedded database
@@ -24,6 +28,9 @@ func (d *DB) Get(key []byte) ([]byte, error) {
 
 	err := d.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return ErrNotFound
+		}
 		if err != nil {
 			return err
 		}
@@ -43,10 +50,6 @@ func (d *DB) Set(key, value []byte) error {
 
 func (d *DB) Delete(key []byte) error {
 	return d.db.Update(func(txn *badger.Txn) error {
-		if _, err := txn.Get(key); err != nil {
-			return err
-		}
-
 		return txn.Delete(key)
 	})
 }

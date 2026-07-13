@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"github.com/andrearcaina/hyperion/internal/db"
-	"github.com/andrearcaina/hyperion/internal/logger"
 	"github.com/hashicorp/raft"
 )
 
@@ -23,23 +22,15 @@ const (
 )
 
 type FSM struct {
-	db     *db.DB
-	logger *logger.Logger
+	db *db.DB
 }
 
-func NewFSM(db *db.DB, logger *logger.Logger) (*FSM, error) {
+func NewFSM(db *db.DB) (*FSM, error) {
 	if db == nil {
 		return nil, fmt.Errorf("db cannot be nil")
 	}
 
-	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
-	}
-
-	return &FSM{
-		db:     db,
-		logger: logger,
-	}, nil
+	return &FSM{db: db}, nil
 }
 
 func (s *FSM) Apply(log *raft.Log) interface{} {

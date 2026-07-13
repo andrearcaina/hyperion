@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-
-	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/spf13/cobra"
 )
 
@@ -22,36 +20,15 @@ var joinCmd = &cobra.Command{
 	Short: "Join a node to the cluster",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var respBody joinResponse
-		var errBody http2.KVResponse
-
-		resp, err := hyprClient.Post(
-			"/hypr/raft/join",
-			http2.JoinRequest{
-				NodeID:  joinNodeID,
-				Address: joinNodeAddr,
-			},
-			&respBody,
-			&errBody,
-		)
-		if err != nil {
+		if err := hyprClient.Join(cmd.Context(), joinNodeID, joinNodeAddr); err != nil {
 			return err
 		}
 
-		if resp.IsError() {
-			return fmt.Errorf("request failed with status %d: %s", resp.StatusCode(), errBody.Error)
-		}
-
-		status := respBody.Status
-		if status == "" {
-			status = "joined"
-		}
-
 		if jsonOutput {
-			return printJSON(cmd, respBody)
+			return printJSON(cmd, joinResponse{Status: "joined"})
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), status)
+		fmt.Fprintln(cmd.OutOrStdout(), "joined")
 		return nil
 	},
 }

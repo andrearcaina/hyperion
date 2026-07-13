@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -12,13 +13,15 @@ import (
 	"github.com/andrearcaina/hyperion/internal/logger"
 	"github.com/andrearcaina/hyperion/internal/server"
 	"github.com/andrearcaina/hyperion/internal/store"
-	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
+	grpctransport "github.com/andrearcaina/hyperion/internal/transport/grpc"
+	httptransport "github.com/andrearcaina/hyperion/internal/transport/http"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
 	serverPort  string
+	grpcPort    string
 	nodeID      string
 	nodeAddr    string
 	nodeTimeout int
@@ -65,8 +68,15 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			ApplyTimeout: time.Duration(nodeTimeout) * time.Second,
 		})
 		if err != nil {
+			_ = db.Close()
 			return err
 		}
+		storeClosed := false
+		defer func() {
+			if !storeClosed {
+				_ = store.Close()
+			}
+		}()
 
 		if bootstrap {
 			if err := store.BootstrapCluster(); err != nil {
@@ -74,19 +84,23 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			}
 		}
 
-		handler := http2.NewHandler(store, logger)
+		httpHandler := httptransport.NewHandler(store, logger)
 
-		srv, err := server.NewServer(serverPort, logger, handler)
+		httpServer, err := server.NewServer(serverPort, logger, httpHandler)
 		if err != nil {
 			return err
 		}
+		grpcServer := server.NewGRPCServer(grpcPort, logger, grpctransport.NewHandler(store))
 
 		// use errgroup to manage the lifecycle of the server and handle graceful shutdown
 		g, ctx := errgroup.WithContext(ctx)
 
 		// start server
 		g.Go(func() error {
-			return srv.Run()
+			return httpServer.Run()
+		})
+		g.Go(func() error {
+			return grpcServer.Run()
 		})
 
 		// wait for shutdown signal
@@ -95,20 +109,19 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			if err := srv.Close(shutdownCtx); err != nil {
-				return err
-			}
-
-			if err := store.Close(); err != nil {
-				return err
-			}
-
-			return nil
+			httpErr := httpServer.Close(shutdownCtx)
+			grpcErr := grpcServer.Close(shutdownCtx)
+			return errors.Join(httpErr, grpcErr)
 		})
 
 		// wait for everything
 		if err := g.Wait(); err != nil {
 			logger.Error(context.Background(), "Server exited with error", "error", err)
+			return err
+		}
+
+		storeClosed = true
+		if err := store.Close(); err != nil {
 			return err
 		}
 
@@ -126,6 +139,7 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringVarP(&serverPort, "srv-port", "p", ":8080", "Port to listen on")
+	rootCmd.Flags().StringVar(&grpcPort, "grpc-addr", ":8081", "gRPC address to listen on")
 	rootCmd.Flags().StringVarP(&nodeID, "node-id", "n", "node-1", "Node ID")
 	rootCmd.Flags().StringVarP(&nodeAddr, "node-addr", "a", "127.0.0.1:9001", "Node address")
 	rootCmd.Flags().IntVarP(&nodeTimeout, "node-timeout", "t", 5, "Node timeout in seconds")

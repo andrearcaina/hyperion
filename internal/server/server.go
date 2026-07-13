@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/andrearcaina/hyperion/internal/logger"
 	http2 "github.com/andrearcaina/hyperion/internal/transport/http"
@@ -27,8 +28,10 @@ func NewServer(port string, logger *logger.Logger, handler *http2.Handler) (*Ser
 
 	return &Server{
 		srv: &http.Server{
-			Addr:    port,
-			Handler: router,
+			Addr:              port,
+			Handler:           router,
+			ReadHeaderTimeout: 5 * time.Second,
+			IdleTimeout:       60 * time.Second,
 		},
 		logger: logger,
 	}, nil

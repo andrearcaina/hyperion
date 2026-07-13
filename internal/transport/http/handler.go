@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,11 +13,19 @@ import (
 )
 
 type Handler struct {
-	store  *store.Store
+	store  Store
 	logger *logger.Logger
 }
 
-func NewHandler(st *store.Store, logger *logger.Logger) *Handler {
+type Store interface {
+	Set(key string, value []byte) error
+	Get(key string) ([]byte, error)
+	Delete(key string) error
+	ForEach(func(key, value []byte) error) error
+	Join(nodeID, nodeAddress string) error
+}
+
+func NewHandler(st Store, logger *logger.Logger) *Handler {
 	return &Handler{
 		store:  st,
 		logger: logger,
@@ -42,8 +51,9 @@ func (h *Handler) ServeRoutes() chi.Router {
 
 func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
+	const maxValueSize = 4 << 20
 
-	body, err := io.ReadAll(r.Body)
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxValueSize))
 	if err != nil {
 		h.logger.Debug(r.Context(), "failed to read request body", "error", err)
 		writeError(w, http.StatusBadRequest, fmt.Errorf("failed to read request body: %v", err))
@@ -52,7 +62,7 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.Set(key, body); err != nil {
 		h.logger.Error(r.Context(), "failed to set key", "error", err)
-		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to set key: %s, error: %v", key, err))
+		writeStoreError(w, err)
 		return
 	}
 
@@ -67,8 +77,8 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	val, err := h.store.Get(key)
 	if err != nil {
-		h.logger.Error(r.Context(), "failed to get key", "error", err)
-		writeError(w, http.StatusNotFound, fmt.Errorf("failed to get key: %s, error: %v", key, err))
+		h.logger.Debug(r.Context(), "failed to get key", "key", key, "error", err)
+		writeStoreError(w, err)
 		return
 	}
 
@@ -83,7 +93,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.Delete(key); err != nil {
 		h.logger.Error(r.Context(), "failed to delete key", "error", err)
-		writeError(w, http.StatusNotFound, fmt.Errorf("failed to delete key: %s, error: %v", key, err))
+		writeStoreError(w, err)
 		return
 	}
 
@@ -103,7 +113,7 @@ func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.logger.Error(r.Context(), "failed to iterate over key-value pairs", "error", err)
-		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to iterate over key-value pairs: %v", err))
+		writeStoreError(w, err)
 		return
 	}
 
@@ -118,17 +128,27 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.store.IsLeader() {
-		writeError(w, http.StatusForbidden, fmt.Errorf("not leader"))
-		return
-	}
-
 	if err := h.store.Join(req.NodeID, req.Address); err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeStoreError(w, err)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
 		"status": "joined",
 	})
+}
+
+func writeStoreError(w http.ResponseWriter, err error) {
+	var notLeader *store.NotLeaderError
+
+	switch {
+	case errors.Is(err, store.ErrInvalidKey):
+		writeError(w, http.StatusBadRequest, err)
+	case errors.Is(err, store.ErrNotFound):
+		writeError(w, http.StatusNotFound, err)
+	case errors.As(err, &notLeader):
+		writeError(w, http.StatusConflict, err)
+	default:
+		writeError(w, http.StatusInternalServerError, errors.New("internal server error"))
+	}
 }
