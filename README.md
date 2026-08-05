@@ -8,10 +8,10 @@ Raft group, no sharding, no authentication, and no TLS.
 ### How it works
 
 ```text
-                          Raft TCP :9001
-HTTP :8080 ─┐          ┌─────────────────┐
+                         Raft TCP :9001
+HTTP :8080 ─┐          ┌────────────────┐
             ├─> Store ─> replicated log ─> BadgerDB
-gRPC :8081 ─┘          └─────────────────┘
+gRPC :8081 ─┘          └────────────────┘
 ```
 
 - `hyprd` runs the HTTP API, gRPC API, Raft node, and local Badger database.
@@ -102,8 +102,12 @@ bindings with `make generate` after changing it.
 Below is a list of development commands:
 
 ```bash
-make test
+make generate
 make build
+make vet # runs go vet on the codebase
+make test # runs go test on the codebase
+make check # runs vet test generate build 
+make clean # cleans up bin folder
 ```
 
 ### Other Information

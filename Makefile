@@ -9,8 +9,13 @@ build:
 	go build -o ./bin/hyprd ./cmd/hyprd
 	go build -o ./bin/hyprctl ./cmd/hyprctl
 
-clean:
-	rm -f ./bin/hyprd ./bin/hyprctl
+vet:
+	go vet ./...
 
 test:
 	go test ./...
+
+check: vet test generate build
+
+clean:
+	rm -f ./bin/hyprd ./bin/hyprctl

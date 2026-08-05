@@ -29,8 +29,6 @@ const (
 // HyperionClient is the client API for Hyperion service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// Hyperion exposes the replicated key-value store and cluster membership API.
 type HyperionClient interface {
 	Put(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
@@ -100,8 +98,6 @@ func (c *hyperionClient) Join(ctx context.Context, in *JoinRequest, opts ...grpc
 // HyperionServer is the server API for Hyperion service.
 // All implementations must embed UnimplementedHyperionServer
 // for forward compatibility.
-//
-// Hyperion exposes the replicated key-value store and cluster membership API.
 type HyperionServer interface {
 	Put(context.Context, *PutRequest) (*PutResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
