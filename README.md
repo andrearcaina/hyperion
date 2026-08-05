@@ -122,4 +122,6 @@ For more background, read [the Raft notes](docs/raft.md) and
 - [x] Implement `hyprctl` CLI to interact with running `hyprd` nodes
 - [X] Add gRPC API support because why not
 - [ ] Add Docker and Kubernetes support instead of just processes
+    - [ ] Build a chaos test harness covering network partitions, leader churn,
+      `kill -9` crashes, and concurrent multi-client writes
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)
