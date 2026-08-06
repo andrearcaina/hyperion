@@ -49,6 +49,10 @@ func (h *Handler) ServeRoutes() chi.Router {
 	return r
 }
 
+func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
 func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 	const maxValueSize = 4 << 20

@@ -1,0 +1,12 @@
+.git
+.gitignore
+.agents
+.codex
+bin
+coverage.*
+*.out
+*.test
+Dockerfile*
+compose*.yml
+README.md
+docs

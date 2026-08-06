@@ -104,7 +104,12 @@ func (n *Node) BootstrapCluster() error {
 		},
 	}
 
-	return n.raft.BootstrapCluster(config).Error()
+	err := n.raft.BootstrapCluster(config).Error()
+	if errors.Is(err, raft.ErrCantBootstrap) {
+		return nil
+	}
+
+	return err
 }
 
 func (n *Node) Join(nodeID, nodeAddress string) error {

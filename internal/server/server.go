@@ -24,6 +24,7 @@ func NewServer(port string, logger *logger.Logger, handler *http2.Handler) (*Ser
 		middleware.Recoverer,
 	)
 
+	router.Get("/healthz", handler.Health)
 	router.Mount("/hypr", handler.ServeRoutes())
 
 	return &Server{

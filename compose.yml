@@ -1,0 +1,82 @@
+services:
+  node-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hyperion:local
+    restart: unless-stopped
+    command:
+      - hyprd
+      - --node-id
+      - node-1
+      - --node-addr
+      - node-1:9001
+      - --bootstrap
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "9001:9001"
+    volumes:
+      - node-1-data:/home/hyperion/.hyperion/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  node-2:
+    image: hyperion:local
+    restart: unless-stopped
+    command: ["hyprd", "--node-id", "node-2", "--node-addr", "node-2:9001"]
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+      - "9002:9001"
+    volumes:
+      - node-2-data:/home/hyperion/.hyperion/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  node-3:
+    image: hyperion:local
+    restart: unless-stopped
+    command: ["hyprd", "--node-id", "node-3", "--node-addr", "node-3:9001"]
+    ports:
+      - "8084:8080"
+      - "8085:8081"
+      - "9003:9001"
+    volumes:
+      - node-3-data:/home/hyperion/.hyperion/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  cluster-init:
+    image: hyperion:local
+    restart: "no"
+    depends_on:
+      node-1:
+        condition: service_healthy
+      node-2:
+        condition: service_healthy
+      node-3:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        until hyprctl --addr http://node-1:8080 join --node-id node-2 --node-addr node-2:9001; do sleep 1; done
+        until hyprctl --addr http://node-1:8080 join --node-id node-3 --node-addr node-3:9001; do sleep 1; done
+
+volumes:
+  node-1-data:
+  node-2-data:
+  node-3-data:
