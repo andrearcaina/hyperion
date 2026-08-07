@@ -13,18 +13,18 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct {
-	store          Store
-	logger         *logger.Logger
-	proxyTransport http.RoundTripper
-}
-
 type Store interface {
 	Set(key string, value []byte) error
 	Get(key string) ([]byte, error)
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
 	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
+}
+
+type Handler struct {
+	store          Store
+	logger         *logger.Logger
+	proxyTransport http.RoundTripper
 }
 
 func NewHandler(st Store, logger *logger.Logger) *Handler {

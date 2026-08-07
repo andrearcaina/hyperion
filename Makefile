@@ -1,5 +1,5 @@
 .PHONY: build clean generate test vet check \
-	docker-build docker-run docker-stop docker-status docker-logs docker-clean
+	docker-config docker-build docker-run docker-stop docker-status docker-logs docker-clean
 
 DOCKER_COMPOSE ?= docker compose
 
@@ -22,6 +22,9 @@ check: vet test generate build
 
 clean:
 	rm -f ./bin/hyprd ./bin/hyprctl
+
+docker-config:
+	$(DOCKER_COMPOSE) config --quiet
 
 docker-build:
 	$(DOCKER_COMPOSE) build

@@ -5,13 +5,7 @@ services:
       dockerfile: Dockerfile
     image: hyperion:local
     restart: unless-stopped
-    command:
-      - hyprd
-      - --node-id
-      - node-1
-      - --node-addr
-      - node-1:9001
-      - --bootstrap
+    command: ["hyprd", "--node-id", "node-1", "--node-addr", "node-1:9001", "--bootstrap"]
     ports:
       - "8080:8080"
       - "8081:8081"

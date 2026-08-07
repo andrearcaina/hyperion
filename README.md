@@ -1,10 +1,15 @@
-# hyperion
+# Hyperion
 
 Hyperion is a replicated key-value store built to explore distributed systems
 and Raft. It is a learning project, not a production database: it has one Raft
 group, no sharding, no authentication, and no TLS.
 
 ### How it works
+
+Every `hyprd` process is a complete node that participates in Raft consensus and stores data in BadgerDB, exposing HTTP and gRPC APIs.
+Clients use `hyprctl` to send requests through either API, and both feed into the same store.
+Raft elects one node as the leader and replicates each write through a majority of the cluster before applying it to BadgerDB.
+BoltDB keeps the Raft state, while BadgerDB holds the user-visible key-value data.
 
 ```text
                          Raft TCP :9001
@@ -13,8 +18,10 @@ HTTP :8080 ─┐          ┌────────────────�
 gRPC :8081 ─┘          └────────────────┘
 ```
 
-When a client requests a follower node, the follower node forwards the request to the
-current leader node. Its HTTP handler acts as a reverse proxy, while its gRPC handler calls the same RPC on the leader.
+Clients (Users) can connect to any node. If a request reaches a follower, its HTTP
+handler acts as a reverse proxy to the current leader, while its gRPC handler
+calls the same RPC on the leader. The leader then serves the linearizable read
+or coordinates the write through Raft.
 
 ```text
                           forwarded request
@@ -24,15 +31,12 @@ Client ──────> Follower ──────────────�
                └─ gRPC forwarding           └─ gRPC handler
 ```
 
-- Each `hyprd` process is a complete node: HTTP, gRPC, Raft, and BadgerDB.
-- Raft elects one leader and replicates writes through a majority of nodes.
-- The leader serves linearizable reads and writes; followers forward client
-  requests to the leader's advertised HTTP or gRPC address.
-- BoltDB stores Raft state, while BadgerDB stores the user-visible key-value
-  data.
-- `hyprctl` is the client for both the HTTP and gRPC APIs.
+Data is stored under `~/.hyperion/data/<node-id>`.
 
-### Run with Docker
+For more background information, read [the Raft notes](docs/raft.md) and
+[the distributed KV overview](docs/distributed-kv-db.md).
+
+### Run with Docker Compose
 
 Start a three-node cluster:
 
@@ -42,7 +46,7 @@ make docker-run
 
 Compose gives each node its own container and data volume, bootstraps node 1,
 and joins nodes 2 and 3. The nodes publish HTTP on ports `8080`, `8082`, and
-`8084`; gRPC on `8081`, `8083`, and `8085`; and Raft on `9001`–`9003`.
+`8084`; gRPC on `8081`, `8083`, and `8085`; and Raft on `9001`, `9002`, and `9003`.
 
 ```bash
 docker compose exec node-1 hyprctl set greeting hello
@@ -52,10 +56,11 @@ docker compose exec node-1 hyprctl get greeting
 The image includes both `hyprd` and `hyprctl`. You can also run `make build`
 and use the local `hyprctl` in the `bin/` directory against the Docker cluster.
 
-Use `make docker-status` or `make docker-logs` to inspect the cluster. Run
+Use `make docker-config` to validate the Compose configuration, and
+`make docker-status` or `make docker-logs` to inspect the cluster. Run
 `make docker-stop` to preserve its data or `make docker-clean` to delete it.
 
-### Run locally
+### Run Locally
 
 Build and start one node:
 
@@ -126,13 +131,6 @@ make check    # generate, vet, test, and build
 make generate # regenerate protobuf bindings
 make clean    # remove local binaries
 ```
-
-### Other Information
-
-Data is stored under `~/.hyperion/data/<node-id>`.
-
-For more background, read [the Raft notes](docs/raft.md) and
-[the distributed KV overview](docs/distributed-kv-db.md).
 
 ### Roadmap
 
