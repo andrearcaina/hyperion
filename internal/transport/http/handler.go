@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,8 +14,9 @@ import (
 )
 
 type Handler struct {
-	store  Store
-	logger *logger.Logger
+	store          Store
+	logger         *logger.Logger
+	proxyTransport http.RoundTripper
 }
 
 type Store interface {
@@ -22,7 +24,7 @@ type Store interface {
 	Get(key string) ([]byte, error)
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
-	Join(nodeID, nodeAddress string) error
+	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
 }
 
 func NewHandler(st Store, logger *logger.Logger) *Handler {
@@ -65,6 +67,11 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.Set(key, body); err != nil {
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
 		h.logger.Error(r.Context(), "failed to set key", "error", err)
 		writeStoreError(w, err)
 		return
@@ -81,6 +88,10 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	val, err := h.store.Get(key)
 	if err != nil {
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
 		h.logger.Debug(r.Context(), "failed to get key", "key", key, "error", err)
 		writeStoreError(w, err)
 		return
@@ -96,6 +107,10 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
 	if err := h.store.Delete(key); err != nil {
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
 		h.logger.Error(r.Context(), "failed to delete key", "error", err)
 		writeStoreError(w, err)
 		return
@@ -115,7 +130,12 @@ func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 
 		return nil
 	})
+
 	if err != nil {
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
 		h.logger.Error(r.Context(), "failed to iterate over key-value pairs", "error", err)
 		writeStoreError(w, err)
 		return
@@ -127,12 +147,22 @@ func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 	var req JoinRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := h.store.Join(req.NodeID, req.Address); err != nil {
+	if err := h.store.Join(req.NodeID, req.Address, req.HTTPAddress, req.GRPCAddress); err != nil {
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
 		writeStoreError(w, err)
 		return
 	}

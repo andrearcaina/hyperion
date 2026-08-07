@@ -421,6 +421,8 @@ type JoinRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	RaftAddress   string                 `protobuf:"bytes,2,opt,name=raft_address,json=raftAddress,proto3" json:"raft_address,omitempty"`
+	HttpAddress   string                 `protobuf:"bytes,3,opt,name=http_address,json=httpAddress,proto3" json:"http_address,omitempty"`
+	GrpcAddress   string                 `protobuf:"bytes,4,opt,name=grpc_address,json=grpcAddress,proto3" json:"grpc_address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -465,6 +467,20 @@ func (x *JoinRequest) GetNodeId() string {
 func (x *JoinRequest) GetRaftAddress() string {
 	if x != nil {
 		return x.RaftAddress
+	}
+	return ""
+}
+
+func (x *JoinRequest) GetHttpAddress() string {
+	if x != nil {
+		return x.HttpAddress
+	}
+	return ""
+}
+
+func (x *JoinRequest) GetGrpcAddress() string {
+	if x != nil {
+		return x.GrpcAddress
 	}
 	return ""
 }
@@ -529,10 +545,12 @@ const file_proto_hyperion_proto_rawDesc = "" +
 	"\x0eDeleteResponse\"\r\n" +
 	"\vListRequest\"<\n" +
 	"\fListResponse\x12,\n" +
-	"\aentries\x18\x01 \x03(\v2\x12.hyperion.v1.EntryR\aentries\"I\n" +
+	"\aentries\x18\x01 \x03(\v2\x12.hyperion.v1.EntryR\aentries\"\x8f\x01\n" +
 	"\vJoinRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12!\n" +
-	"\fraft_address\x18\x02 \x01(\tR\vraftAddress\"\x0e\n" +
+	"\fraft_address\x18\x02 \x01(\tR\vraftAddress\x12!\n" +
+	"\fhttp_address\x18\x03 \x01(\tR\vhttpAddress\x12!\n" +
+	"\fgrpc_address\x18\x04 \x01(\tR\vgrpcAddress\"\x0e\n" +
 	"\fJoinResponse2\xbb\x02\n" +
 	"\bHyperion\x128\n" +
 	"\x03Put\x12\x17.hyperion.v1.PutRequest\x1a\x18.hyperion.v1.PutResponse\x128\n" +

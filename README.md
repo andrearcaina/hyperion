@@ -13,15 +13,24 @@ HTTP :8080 ─┐          ┌────────────────�
 gRPC :8081 ─┘          └────────────────┘
 ```
 
+When a client requests a follower node, the follower node forwards the request to the
+current leader node. Its HTTP handler acts as a reverse proxy, while its gRPC handler calls the same RPC on the leader.
+
+```text
+                          forwarded request
+Client ──────> Follower ──────────────────> Leader ──────> Store ──────> Raft
+               │                            │
+               ├─ HTTP reverse proxy        ├─ HTTP handler
+               └─ gRPC forwarding           └─ gRPC handler
+```
+
 - Each `hyprd` process is a complete node: HTTP, gRPC, Raft, and BadgerDB.
 - Raft elects one leader and replicates writes through a majority of nodes.
-- The leader serves linearizable reads and writes; followers reject client
-  requests for now.
+- The leader serves linearizable reads and writes; followers forward client
+  requests to the leader's advertised HTTP or gRPC address.
 - BoltDB stores Raft state, while BadgerDB stores the user-visible key-value
   data.
 - `hyprctl` is the client for both the HTTP and gRPC APIs.
-
-Port `9001` is for internal Raft traffic, not gRPC.
 
 ### Run with Docker
 
@@ -85,9 +94,15 @@ hyprd --node-id n3 --node-addr 127.0.0.1:9003 \
 Then join the followers through node 1:
 
 ```bash
-hyprctl join --node-id n2 --node-addr 127.0.0.1:9002
-hyprctl join --node-id n3 --node-addr 127.0.0.1:9003
+hyprctl join --node-id n2 --node-addr 127.0.0.1:9002 \
+  --http-addr 127.0.0.1:8082 --grpc-addr 127.0.0.1:8083
+hyprctl join --node-id n3 --node-addr 127.0.0.1:9003 \
+  --http-addr 127.0.0.1:8084 --grpc-addr 127.0.0.1:8085
 ```
+
+The advertised client addresses are optional when every node uses the same
+internal HTTP and gRPC ports (as in Docker Compose). Specify them when several
+nodes share a host and therefore listen on different ports.
 
 ### Interfaces
 
@@ -126,7 +141,7 @@ For more background, read [the Raft notes](docs/raft.md) and
 - [x] Implement Raft for consensus between nodes (single node for now)
     - [x] Add support for clustering and replication
     - [x] Support leader-only linearizable reads and writes
-    - [ ] Allow requests through any node by forwarding them to the leader
+    - [x] Allow requests through any node by forwarding them to the leader
 - [x] Implement `hyprctl` CLI to interact with running `hyprd` nodes
 - [x] Add gRPC API support
 - [x] Add Docker support

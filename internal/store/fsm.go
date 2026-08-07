@@ -11,14 +11,19 @@ import (
 )
 
 type writeCommand struct {
-	Op    string `json:"op"`
-	Key   string `json:"key"`
-	Value []byte `json:"value,omitempty"`
+	Op          string `json:"op"`
+	Key         string `json:"key,omitempty"`
+	Value       []byte `json:"value,omitempty"`
+	NodeID      string `json:"node_id,omitempty"`
+	HTTPAddress string `json:"http_address,omitempty"`
+	GRPCAddress string `json:"grpc_address,omitempty"`
 }
 
 const (
-	commandSet    = "set"
-	commandDelete = "delete"
+	commandSet                 = "set"
+	commandDelete              = "delete"
+	commandSaveMemberAddresses = "save_member_addresses"
+	memberKeyPrefix            = "\x00hyperion/member/"
 )
 
 type FSM struct {
@@ -44,6 +49,16 @@ func (s *FSM) Apply(log *raft.Log) interface{} {
 		return s.db.Set([]byte(cmd.Key), cmd.Value)
 	case commandDelete:
 		return s.db.Delete([]byte(cmd.Key))
+	case commandSaveMemberAddresses:
+		data, err := json.Marshal(memberAddresses{
+			HTTP: cmd.HTTPAddress,
+			GRPC: cmd.GRPCAddress,
+		})
+		if err != nil {
+			return err
+		}
+
+		return s.db.Set([]byte(memberKeyPrefix+cmd.NodeID), data)
 	default:
 		return fmt.Errorf("unknown command: %s", cmd.Op)
 	}

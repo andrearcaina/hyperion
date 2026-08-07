@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -20,12 +22,14 @@ import (
 )
 
 var (
-	serverPort  string
-	grpcPort    string
-	nodeID      string
-	nodeAddr    string
-	nodeTimeout int
-	bootstrap   bool
+	serverPort        string
+	grpcPort          string
+	httpAdvertiseAddr string
+	grpcAdvertiseAddr string
+	nodeID            string
+	nodeAddr          string
+	nodeTimeout       int
+	bootstrap         bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -56,6 +60,15 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 
 		logger := logger.New(nil)
 
+		resolvedHTTPAddress, err := advertisedAddress(nodeAddr, serverPort, httpAdvertiseAddr)
+		if err != nil {
+			return fmt.Errorf("resolve advertised HTTP address: %w", err)
+		}
+		resolvedGRPCAddress, err := advertisedAddress(nodeAddr, grpcPort, grpcAdvertiseAddr)
+		if err != nil {
+			return fmt.Errorf("resolve advertised gRPC address: %w", err)
+		}
+
 		db, err := db.New(dbPath)
 		if err != nil {
 			return err
@@ -65,6 +78,8 @@ Will be a distributed system later on with Raft Consensus Algorithm.`,
 			NodeID:       nodeID,
 			NodeAddr:     nodeAddr,
 			NodePath:     nodePath, // path for Raft log and state machine snapshots
+			HTTPAddress:  resolvedHTTPAddress,
+			GRPCAddress:  resolvedGRPCAddress,
 			ApplyTimeout: time.Duration(nodeTimeout) * time.Second,
 		})
 		if err != nil {
@@ -140,8 +155,29 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVarP(&serverPort, "srv-port", "p", ":8080", "Port to listen on")
 	rootCmd.Flags().StringVar(&grpcPort, "grpc-addr", ":8081", "gRPC address to listen on")
+	rootCmd.Flags().StringVar(&httpAdvertiseAddr, "http-advertise-addr", "", "HTTP address advertised to other nodes (derived by default)")
+	rootCmd.Flags().StringVar(&grpcAdvertiseAddr, "grpc-advertise-addr", "", "gRPC address advertised to other nodes (derived by default)")
 	rootCmd.Flags().StringVarP(&nodeID, "node-id", "n", "node-1", "Node ID")
 	rootCmd.Flags().StringVarP(&nodeAddr, "node-addr", "a", "127.0.0.1:9001", "Node address")
 	rootCmd.Flags().IntVarP(&nodeTimeout, "node-timeout", "t", 5, "Node timeout in seconds")
 	rootCmd.Flags().BoolVarP(&bootstrap, "bootstrap", "b", false, "Bootstrap the cluster")
+}
+
+func advertisedAddress(raftAddress, listenAddress, explicitAddress string) (string, error) {
+	if explicitAddress != "" {
+		if _, _, err := net.SplitHostPort(explicitAddress); err != nil {
+			return "", err
+		}
+		return explicitAddress, nil
+	}
+
+	host, _, err := net.SplitHostPort(raftAddress)
+	if err != nil {
+		return "", err
+	}
+	_, port, err := net.SplitHostPort(listenAddress)
+	if err != nil {
+		return "", err
+	}
+	return net.JoinHostPort(host, port), nil
 }

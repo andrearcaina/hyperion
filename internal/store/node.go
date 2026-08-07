@@ -26,6 +26,8 @@ type NodeConfig struct {
 	NodeID       string
 	NodeAddr     string
 	NodePath     string
+	HTTPAddress  string
+	GRPCAddress  string
 	ApplyTimeout time.Duration
 }
 
@@ -104,12 +106,7 @@ func (n *Node) BootstrapCluster() error {
 		},
 	}
 
-	err := n.raft.BootstrapCluster(config).Error()
-	if errors.Is(err, raft.ErrCantBootstrap) {
-		return nil
-	}
-
-	return err
+	return n.raft.BootstrapCluster(config).Error()
 }
 
 func (n *Node) Join(nodeID, nodeAddress string) error {
@@ -185,6 +182,29 @@ func (n *Node) Apply(data []byte) raft.ApplyFuture { return n.raft.Apply(data, n
 func (n *Node) GetNodeID() string                  { return n.cfg.NodeID }
 func (n *Node) GetState() raft.RaftState           { return n.raft.State() }
 func (n *Node) IsLeader() bool                     { return n.GetState() == raft.Leader }
+func (n *Node) waitForLeadership(timeout time.Duration) error {
+	if n.IsLeader() {
+		return nil
+	}
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case isLeader, ok := <-n.raft.LeaderCh():
+			if !ok {
+				return errors.New("Raft stopped while waiting for leadership")
+			}
+
+			if isLeader {
+				return nil
+			}
+		case <-timer.C:
+			return errors.New("timed out waiting for Raft leadership")
+		}
+	}
+}
 func (n *Node) Close() error {
 	var errs []error
 	if err := n.raft.Shutdown().Error(); err != nil {

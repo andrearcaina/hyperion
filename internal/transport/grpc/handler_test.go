@@ -38,8 +38,8 @@ func (s *memoryStore) Get(key string) ([]byte, error) {
 	return append([]byte(nil), value...), nil
 }
 
-func (s *memoryStore) Delete(key string) error { delete(s.values, key); return nil }
-func (s *memoryStore) Join(_, _ string) error  { return nil }
+func (s *memoryStore) Delete(key string) error      { delete(s.values, key); return nil }
+func (s *memoryStore) Join(_, _, _, _ string) error { return nil }
 func (s *memoryStore) ForEach(fn func([]byte, []byte) error) error {
 	keys := make([]string, 0, len(s.values))
 	for key := range s.values {
@@ -55,6 +55,16 @@ func (s *memoryStore) ForEach(fn func([]byte, []byte) error) error {
 
 	return nil
 }
+
+type followerStore struct {
+	err error
+}
+
+func (s *followerStore) Set(string, []byte) error                  { return s.err }
+func (s *followerStore) Get(string) ([]byte, error)                { return nil, s.err }
+func (s *followerStore) Delete(string) error                       { return s.err }
+func (s *followerStore) ForEach(func([]byte, []byte) error) error  { return s.err }
+func (s *followerStore) Join(string, string, string, string) error { return s.err }
 
 func TestHandlerRoundTrip(t *testing.T) {
 	client := newTestClient(t, &memoryStore{values: make(map[string][]byte)})
@@ -97,20 +107,35 @@ func TestGRPCErrorMapping(t *testing.T) {
 	}
 }
 
+func TestFollowerForwardsGRPCPutToLeader(t *testing.T) {
+	leaderStore := &memoryStore{values: make(map[string][]byte)}
+	follower := &followerStore{err: &store.NotLeaderError{
+		NodeID: "n2", LeaderID: "n1", LeaderGRPCAddress: "passthrough:///leader",
+	}}
+	followerHandler := NewHandler(follower)
+	followerHandler.dialOptions = serveTestHandler(t, NewHandler(leaderStore))
+
+	client := newTestClientForHandler(t, followerHandler)
+	if _, err := client.Put(context.Background(), &hyperionv1.PutRequest{
+		Key: "greeting", Value: []byte("hello"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := string(leaderStore.values["greeting"]); got != "hello" {
+		t.Fatalf("leader value = %q, want hello", got)
+	}
+}
+
 func newTestClient(t *testing.T, st Store) hyperionv1.HyperionClient {
+	return newTestClientForHandler(t, NewHandler(st))
+}
+
+func newTestClientForHandler(t *testing.T, handler *Handler) hyperionv1.HyperionClient {
 	t.Helper()
+	dialOptions := serveTestHandler(t, handler)
 
-	listener := bufconn.Listen(1024 * 1024)
-	server := googlegrpc.NewServer()
-	hyperionv1.RegisterHyperionServer(server, NewHandler(st))
-	go func() { _ = server.Serve(listener) }()
-	t.Cleanup(server.Stop)
-
-	connection, err := googlegrpc.NewClient(
-		"passthrough:///bufnet",
-		googlegrpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }),
-		googlegrpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	connection, err := googlegrpc.NewClient("passthrough:///bufnet", dialOptions...)
 
 	if err != nil {
 		t.Fatal(err)
@@ -119,4 +144,22 @@ func newTestClient(t *testing.T, st Store) hyperionv1.HyperionClient {
 	t.Cleanup(func() { _ = connection.Close() })
 
 	return hyperionv1.NewHyperionClient(connection)
+}
+
+func serveTestHandler(t *testing.T, handler *Handler) []googlegrpc.DialOption {
+	t.Helper()
+
+	listener := bufconn.Listen(1024 * 1024)
+	server := googlegrpc.NewServer()
+	hyperionv1.RegisterHyperionServer(server, handler)
+	go func() { _ = server.Serve(listener) }()
+	t.Cleanup(func() {
+		server.Stop()
+		_ = listener.Close()
+	})
+
+	return []googlegrpc.DialOption{
+		googlegrpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return listener.Dial() }),
+		googlegrpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
 }

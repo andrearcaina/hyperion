@@ -7,6 +7,8 @@ type KVResponse struct {
 }
 
 type JoinRequest struct {
-	NodeID  string `json:"node_id"`
-	Address string `json:"address"`
+	NodeID      string `json:"node_id"`
+	Address     string `json:"address"`
+	HTTPAddress string `json:"http_address,omitempty"`
+	GRPCAddress string `json:"grpc_address,omitempty"`
 }

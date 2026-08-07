@@ -33,7 +33,7 @@ type Client interface {
 	Get(ctx context.Context, key string) (Entry, error)
 	Delete(ctx context.Context, key string) error
 	List(ctx context.Context) ([]Entry, error)
-	Join(ctx context.Context, nodeID, raftAddress string) error
+	Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error
 	Close() error
 }
 
@@ -117,8 +117,11 @@ func (c *HTTPClient) List(ctx context.Context) ([]Entry, error) {
 	return entries, nil
 }
 
-func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress string) error {
-	body := map[string]string{"node_id": nodeID, "address": raftAddress}
+func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error {
+	body := map[string]string{
+		"node_id": nodeID, "address": raftAddress,
+		"http_address": httpAddress, "grpc_address": grpcAddress,
+	}
 
 	return c.do(c.client.R().
 		SetContext(ctx).
@@ -211,11 +214,14 @@ func (c *GRPCClient) List(ctx context.Context) ([]Entry, error) {
 	return entries, nil
 }
 
-func (c *GRPCClient) Join(ctx context.Context, nodeID, raftAddress string) error {
+func (c *GRPCClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	_, err := c.client.Join(ctx, &hyperionv1.JoinRequest{NodeId: nodeID, RaftAddress: raftAddress})
+	_, err := c.client.Join(ctx, &hyperionv1.JoinRequest{
+		NodeId: nodeID, RaftAddress: raftAddress,
+		HttpAddress: httpAddress, GrpcAddress: grpcAddress,
+	})
 	return err
 }
 

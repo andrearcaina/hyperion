@@ -49,6 +49,8 @@ message ListResponse {
 message JoinRequest {
   string node_id = 1;
   string raft_address = 2;
+  string http_address = 3;
+  string grpc_address = 4;
 }
 
 message JoinResponse {}
