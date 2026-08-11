@@ -2,7 +2,7 @@
 
 ### Definition
 
-At its simplest, a distributed key-value store is a hash map where data is distributed across multiple machines (nodes), and kept in sync through replication, sharding, or both, using coordination protocols such as consensus or quorum-based systems.
+At its simplest, a distributed key-value store is like a hash map that runs across multiple machines, or nodes. Its data can be copied across nodes through replication, split across nodes through sharding, or both. Coordination methods such as consensus or quorum-based systems are used when the nodes need to agree.
 
 Conceptually, it exposes a minimal interface:
 
@@ -12,14 +12,14 @@ get(key)
 delete(key)
 ```
 
-In more advanced systems like [Redis](https://redis.io/), values are not just opaque blobs but structured data types (e.g., lists, sets, sorted sets), allowing different operations.
+In more advanced systems like [Redis](https://redis.io/), values are not just opaque blobs. They can also be structured data types, such as lists, sets, and sorted sets, which support their own operations.
 
 ### KV Database System Design
 
-Distributed KV stores generally vary along two types (can be both):
+Distributed KV stores generally use either of these approaches, or both:
 
-- Sharding (partitioning): splits data across nodes for scalability (ability to handle more data or traffic by adding more machines)
-- Replication: duplicates data across nodes for fault tolerance (ability to keep working even when some machines fail)
+- Sharding (partitioning): splits data across nodes for scalability, meaning the system can handle more data or traffic by adding more machines
+- Replication: copies data across nodes for fault tolerance, meaning the data can remain available when some machines fail
 
 This leads to three common architectures:
 
@@ -27,32 +27,59 @@ This leads to three common architectures:
     - Full dataset on every node
     - Focus: availability and consistency
     - Example: [etcd](https://etcd.io/)
-    - Concept Example (3 nodes, keys A, B, C):
-        - Node 1 (leader): A B C
-        - Node 2 (follower): A B C
-        - Node 3 (follower): A B C
+
+    Concept example (3 nodes, entries A through E):
+
+    ```plaintext
+    Node 1 (leader)   -> {A: 1, B: 2, C: 3, D: 4, E: 5}
+    Node 2 (follower) -> {A: 1, B: 2, C: 3, D: 4, E: 5}
+    Node 3 (follower) -> {A: 1, B: 2, C: 3, D: 4, E: 5}
+    ```
 
 2. Sharded (clustered) stores
     - Data split across nodes
     - Focus: horizontal scalability
-    - Example: [Redis Cluster](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/) (unless configured differently)
-    - Concept Example (3 nodes, keys A, B, C):
-        - Node 1: A
-        - Node 2: B
-        - Node 3: C
+    - Example: [Redis Cluster](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)
 
-3. Sharded + replicated systems
+    Concept example (3 nodes, 3 shards, entries A through E):
+
+    ```plaintext
+    Node 1 -> Shard 1 {A: 1, B: 2}
+    Node 2 -> Shard 2 {C: 3, D: 4}
+    Node 3 -> Shard 3 {E: 5}
+    ```
+
+3. Sharded and replicated systems
     - Data partitioned and replicated
-    - Focus: scalability + fault tolerance (modern approach)
+    - Focus: scalability and fault tolerance
     - Example: [TiKV](https://tikv.org/) or [CockroachDB](https://www.cockroachlabs.com/)
-    - Concept Example (3 nodes, keys A, B, C):
-        - Shard 1 (A): Node 1 (leader), Node 2 (replica/follower)
-        - Shard 2 (B): Node 2 (leader), Node 3 (replica/follower)
-        - Shard 3 (C): Node 3 (leader), Node 1 (replica/follower)
+
+    Concept example (3 nodes, 3 shards, entries A through E):
+
+    ```plaintext
+    Node 1
+    ├── leader for Shard 1 {A: 1, B: 2}
+    ├── has replica of Shard 2 {C: 3, D: 4}
+    └── has replica of Shard 3 {E: 5}
+
+    Node 2
+    ├── leader for Shard 2 {C: 3, D: 4}
+    ├── has replica of Shard 1 {A: 1, B: 2}
+    └── has replica of Shard 3 {E: 5}
+
+    Node 3
+    ├── leader for Shard 3 {E: 5}
+    ├── has replica of Shard 1 {A: 1, B: 2}
+    └── has replica of Shard 2 {C: 3, D: 4}
+    ```
+
+    In this example, every node stores every shard, but each node leads a different one. This can be configured differently: a system can use fewer replicas or place them on different nodes, depending on its storage and fault-tolerance needs.
+
+Replication and sharding solve different problems. Replication creates extra copies of data, while sharding divides the data. A system can use either one without the other, or combine them.
 
 ### Hyperion Project Specifics
 
-This project draws inspiration from [etcd](https://etcd.io/) and follows a replicated (non-sharded) design, utilizing [Raft Consensus Algorithm](https://raft.github.io/raft.pdf) to essentially make a key-value store distributed by implementing a replicated state machine.
+This project draws inspiration from [etcd](https://etcd.io/) and follows a replicated, non-sharded design. It uses the [Raft Consensus Algorithm](https://raft.github.io/raft.pdf) to turn the key-value store into a replicated state machine. Each node keeps a copy of the full dataset rather than owning a separate shard.
 
 ### Useful Links
 

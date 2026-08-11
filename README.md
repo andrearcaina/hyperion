@@ -24,8 +24,8 @@ calls the same RPC on the leader. The leader then serves the linearizable read
 or coordinates the write through Raft.
 
 ```text
-                          forwarded request
-Client ──────> Follower ──────────────────> Leader ──────> Store ──────> Raft
+                         forwarded request
+Client ──────> Follower ───────────────────> Leader ──────> Store ──────> Raft
                │                            │
                ├─ HTTP reverse proxy        ├─ HTTP handler
                └─ gRPC forwarding           └─ gRPC handler
