@@ -60,6 +60,19 @@ Use `make docker-config` to validate the Compose configuration, and
 `make docker-status` or `make docker-logs` to inspect the cluster. Run
 `make docker-stop` to preserve its data or `make docker-clean` to delete it.
 
+#### Chaos testing
+
+With the three-node Compose cluster running, isolate `node-1` from the Docker
+network and verify that the remaining majority can still commit a write:
+
+```bash
+make test-chaos
+```
+
+The harness also verifies that the isolated node rejects writes, reconnects it
+even when the test fails, and waits for the committed value to become readable
+through that node again. It uses a temporary key which is removed afterward.
+
 ### Run Locally
 
 Build and start one node:
@@ -145,7 +158,7 @@ make clean    # remove local binaries
 - [x] Add Docker support
 - [ ] Add Kubernetes support
 - [ ] Build a chaos test harness for Docker and Kubernetes
-    - [ ] Network partitions
+    - [x] Network partitions
     - [ ] Leader churn
     - [ ] `kill -9` crashes
     - [ ] Concurrent multi-client writes

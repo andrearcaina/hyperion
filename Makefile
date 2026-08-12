@@ -1,5 +1,6 @@
 .PHONY: build clean generate test vet check \
-	docker-config docker-build docker-run docker-stop docker-status docker-logs docker-clean
+	docker-config docker-build docker-run docker-stop docker-status docker-logs docker-clean \
+	test-chaos
 
 DOCKER_COMPOSE ?= docker compose
 
@@ -43,3 +44,6 @@ docker-logs:
 
 docker-clean:
 	$(DOCKER_COMPOSE) down --volumes --remove-orphans
+
+test-chaos:
+	go run ./cmd/hyprchaos $(scenario)
