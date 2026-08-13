@@ -6,14 +6,14 @@ import (
 )
 
 type Harness struct {
-	docker   *dockerCLI
+	docker   *dockerController
 	attempts int
 	delay    time.Duration
 }
 
 func NewHarness() *Harness {
 	return &Harness{
-		docker:   &dockerCLI{},
+		docker:   &dockerController{},
 		attempts: 30,
 		delay:    time.Second,
 	}

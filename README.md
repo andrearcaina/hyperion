@@ -62,16 +62,16 @@ Use `make docker-config` to validate the Compose configuration, and
 
 #### Chaos testing
 
-With the three-node Compose cluster running, isolate `node-1` from the Docker
-network and verify that the remaining majority can still commit a write:
+With the three-node Compose cluster running, you can run a chaos test scenario:
 
 ```bash
-make test-chaos
+make test-chaos scenario=<test-scenario>
 ```
 
-The harness also verifies that the isolated node rejects writes, reconnects it
-even when the test fails, and waits for the committed value to become readable
-through that node again. It uses a temporary key which is removed afterward.
+Currently, the only implemented scenario is `network-partition` and `all` (currently defaulting to `network-partition` for now),
+which simulates a network partition between the leader and the followers.
+The test runs a series of writes and reads, then partitions the leader from the followers,
+and finally heals the partition and checks that the cluster is still consistent.
 
 ### Run Locally
 
