@@ -4,9 +4,9 @@
 
 At it's core, it is a principle for distributed systems that states any distributed system can have at most two of the following properties:
 
-- Consistency (C): Every read receives the most recent write or an error.
-- Availability (A): Every request receives a response, without guarantee that it contains the most recent
-- Partition Tolerance (P): The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes.
+- Consistency (C): Every read receives the most recent successful write, or an error.
+- Availability (A): Every request receives a non-error response, without guarantee that it contains the most recent write.
+- Partition Tolerance (P): The system continues to operate despite network failures that prevent communication between nodes.
 
 This means that systems are either **CP** (Consistency and Partition Tolerance), **AP** (Availability and Partition Tolerance), or **CA** (Consistency and Availability). However, in practice, CA is not achievable in distributed systems due to the inevitability of network partitions. Thus, most distributed systems must choose between CP and AP. It's mathematically impossible to achieve all three properties simultaneously in a distributed system (check this [reddit link](https://www.reddit.com/r/dataengineering/comments/1kzrhwt/cap_theorem_possible_to_achieve_all_three/), a reputable source).
 
