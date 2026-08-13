@@ -33,8 +33,7 @@ Client ──────> Follower ──────────────�
 
 Data is stored under `~/.hyperion/data/<node-id>`.
 
-For more background information, read [the Raft notes](docs/raft.md) and
-[the distributed KV overview](docs/distributed-kv-db.md).
+For more background information, check out [docs/](docs/) for a brief overview of Raft, Distributed KV stores, and CAP theorem.
 
 ### Run with Docker Compose
 
