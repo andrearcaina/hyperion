@@ -1,6 +1,6 @@
-.PHONY: build clean generate test vet check \
-	docker-config docker-build docker-run docker-stop docker-status docker-logs docker-clean \
-	test-chaos
+.PHONY: build clean generate \
+	test test-smoke test-chaos vet check \
+	docker-config docker-build docker-run docker-stop docker-status docker-logs docker-clean
 
 DOCKER_COMPOSE ?= docker compose
 
@@ -18,6 +18,12 @@ vet:
 
 test:
 	go test ./...
+
+test-smoke:
+	go test -tags=smoke ./internal/chaos
+
+test-chaos:
+	go run ./cmd/hyprchaos $(scenario)
 
 check: vet test generate build
 
@@ -44,6 +50,3 @@ docker-logs:
 
 docker-clean:
 	$(DOCKER_COMPOSE) down --volumes --remove-orphans
-
-test-chaos:
-	go run ./cmd/hyprchaos $(scenario)
