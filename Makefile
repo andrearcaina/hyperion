@@ -39,6 +39,11 @@ docker-build:
 docker-run: docker-build
 	$(DOCKER_COMPOSE) up -d
 
+docker-reset: docker-clean docker-run
+
+docker-restart:
+	$(DOCKER_COMPOSE) restart
+
 docker-stop:
 	$(DOCKER_COMPOSE) down --remove-orphans
 

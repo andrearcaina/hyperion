@@ -45,6 +45,16 @@ func (d *dockerController) node(ctx context.Context, service string, args ...str
 	return d.compose(ctx, command...)
 }
 
+func (d *dockerController) kill(ctx context.Context, service string) error {
+	_, err := d.compose(ctx, "kill", "-s", "SIGKILL", service) // same as doing docker compose kill -s 9 <service>
+	return err
+}
+
+func (d *dockerController) start(ctx context.Context, service string) error {
+	_, err := d.compose(ctx, "start", service)
+	return err
+}
+
 func (d *dockerController) container(ctx context.Context, service string) (string, error) {
 	return d.compose(ctx, "ps", "-q", service)
 }

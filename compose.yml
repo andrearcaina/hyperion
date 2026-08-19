@@ -14,7 +14,7 @@ services:
       - node-1-data:/home/hyperion/.hyperion/data
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 10
       start_period: 5s
@@ -31,7 +31,7 @@ services:
       - node-2-data:/home/hyperion/.hyperion/data
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 10
       start_period: 5s
@@ -48,7 +48,7 @@ services:
       - node-3-data:/home/hyperion/.hyperion/data
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 10
       start_period: 5s

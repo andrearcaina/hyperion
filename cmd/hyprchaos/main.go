@@ -26,14 +26,37 @@ func runChaos(scenario string) error {
 	defer stop()
 
 	h := chaos.NewHarness()
+	scenarios := map[string]func(context.Context) error{
+		"network-partition": h.NetworkPartitionChaos,
+		"sigkill":           h.KillChaos,
+	}
 
 	switch scenario {
 	case "all":
-		fmt.Println("[chaos] not yet implemented for all, will run network-partition for now")
-		return h.NetworkPartitionChaos(ctx)
-	case "network-partition":
-		return h.NetworkPartitionChaos(ctx)
+		for scenario, fn := range scenarios {
+			fmt.Printf("---- running scenario: %s ----\n", scenario)
+
+			if err := fn(ctx); err != nil {
+				return fmt.Errorf("scenario %q failed: %w", scenario, err)
+			}
+		}
+
+		return nil
 	default:
-		return fmt.Errorf("unknown scenario %q", scenario)
+		if scenario == "partition" {
+			scenario = "network-partition"
+		}
+
+		if scenario == "kill" || scenario == "kill-9" {
+			scenario = "sigkill"
+		}
+
+		fn, ok := scenarios[scenario]
+		if !ok {
+			return fmt.Errorf("unknown scenario %q", scenario)
+		}
+
+		fmt.Printf("---- running scenario: %s ----\n", scenario)
+		return fn(ctx)
 	}
 }
