@@ -32,5 +32,6 @@ func (h *Harness) retry(ctx context.Context, action func() error) error {
 		case <-time.After(h.delay):
 		}
 	}
+
 	return err
 }

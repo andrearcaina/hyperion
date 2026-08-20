@@ -67,10 +67,12 @@ With the three-node Compose cluster running, you can run a chaos test scenario:
 make test-chaos scenario=<test-scenario>
 ```
 
-The implemented scenarios are `network-partition`, `sigkill`, and `all`.
+The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes`,and `all`.
 `network-partition` simulates a network partition between the leader and the followers.
 `sigkill` sends `SIGKILL/kill -9` to a node container, verifies that the remaining majority can
 still commit writes, restarts the killed node, and checks that it catches up.
+`concurrent-writes` runs 12 concurrent clients writing 10 key each, and then verifies every acknowledge write from another node.
+`all` runs all three scenarios in sequence.
 
 ### Run Locally
 
@@ -163,7 +165,7 @@ make clean    # remove local binaries
 - [ ] Build a chaos test harness for Docker and Kubernetes
     - [x] Network partitions
     - [x] `SIGKILL/kill -9` a random node
-    - [ ] Concurrent multi-client writes
+    - [x] Concurrent multi-client writes
     - [ ] Leader churn
 - [ ] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

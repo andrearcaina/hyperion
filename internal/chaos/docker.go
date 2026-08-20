@@ -17,12 +17,14 @@ func (d *dockerController) run(ctx context.Context, args ...string) (string, err
 	cmd.Stderr = &output
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("docker %s: %w: %s",
+		return "", fmt.Errorf(
+			"docker %s: %w: %s",
 			strings.Join(args, " "),
 			err,
 			strings.TrimSpace(output.String()),
 		)
 	}
+
 	return strings.TrimSpace(output.String()), nil
 }
 
