@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/andrearcaina/hyperion/internal/store"
-	hyperionv1 "github.com/andrearcaina/hyperion/proto"
+	hyperionv1 "github.com/andrearcaina/hyperion/proto/hyperion/v1"
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -127,11 +127,11 @@ func TestFollowerForwardsGRPCPutToLeader(t *testing.T) {
 	}
 }
 
-func newTestClient(t *testing.T, st Store) hyperionv1.HyperionClient {
+func newTestClient(t *testing.T, st Store) hyperionv1.HyperionServiceClient {
 	return newTestClientForHandler(t, NewHandler(st))
 }
 
-func newTestClientForHandler(t *testing.T, handler *Handler) hyperionv1.HyperionClient {
+func newTestClientForHandler(t *testing.T, handler *Handler) hyperionv1.HyperionServiceClient {
 	t.Helper()
 	dialOptions := serveTestHandler(t, handler)
 
@@ -143,7 +143,7 @@ func newTestClientForHandler(t *testing.T, handler *Handler) hyperionv1.Hyperion
 
 	t.Cleanup(func() { _ = connection.Close() })
 
-	return hyperionv1.NewHyperionClient(connection)
+	return hyperionv1.NewHyperionServiceClient(connection)
 }
 
 func serveTestHandler(t *testing.T, handler *Handler) []googlegrpc.DialOption {
@@ -151,7 +151,7 @@ func serveTestHandler(t *testing.T, handler *Handler) []googlegrpc.DialOption {
 
 	listener := bufconn.Listen(1024 * 1024)
 	server := googlegrpc.NewServer()
-	hyperionv1.RegisterHyperionServer(server, handler)
+	hyperionv1.RegisterHyperionServiceServer(server, handler)
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(func() {
 		server.Stop()

@@ -2,12 +2,13 @@ package client
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
 
-	hyperionv1 "github.com/andrearcaina/hyperion/proto"
+	hyperionv1 "github.com/andrearcaina/hyperion/proto/hyperion/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"resty.dev/v3"
@@ -24,7 +25,7 @@ func (e Entry) MarshalJSON() ([]byte, error) {
 		Value string `json:"value"`
 	}{
 		Key:   e.Key,
-		Value: string(e.Value),
+		Value: base64.StdEncoding.EncodeToString(e.Value),
 	})
 }
 
@@ -45,6 +46,11 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
+type httpEntry struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 func NewHTTP(address string, timeout time.Duration) *HTTPClient {
 	return &HTTPClient{
 		client: resty.New().
@@ -55,36 +61,32 @@ func NewHTTP(address string, timeout time.Duration) *HTTPClient {
 }
 
 func (c *HTTPClient) Put(ctx context.Context, key string, value []byte) (Entry, error) {
-	var wire struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	}
+	var wire httpEntry
 
 	err := c.do(c.client.R().
 		SetContext(ctx).
 		SetBody(value).
 		SetResult(&wire).
 		Put("/hypr/kv/" + url.PathEscape(key)))
-	return Entry{
-		Key:   wire.Key,
-		Value: []byte(wire.Value),
-	}, err
+	entry, decodeErr := entryFromHTTP(wire)
+	if err != nil {
+		return entry, err
+	}
+	return entry, decodeErr
 }
 
 func (c *HTTPClient) Get(ctx context.Context, key string) (Entry, error) {
-	var wire struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	}
+	var wire httpEntry
 
 	err := c.do(c.client.R().
 		SetContext(ctx).
 		SetResult(&wire).
 		Get("/hypr/kv/" + url.PathEscape(key)))
-	return Entry{
-		Key:   wire.Key,
-		Value: []byte(wire.Value),
-	}, err
+	entry, decodeErr := entryFromHTTP(wire)
+	if err != nil {
+		return entry, err
+	}
+	return entry, decodeErr
 }
 
 func (c *HTTPClient) Delete(ctx context.Context, key string) error {
@@ -94,10 +96,7 @@ func (c *HTTPClient) Delete(ctx context.Context, key string) error {
 }
 
 func (c *HTTPClient) List(ctx context.Context) ([]Entry, error) {
-	var wire []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	}
+	var wire []httpEntry
 
 	if err := c.do(c.client.R().
 		SetContext(ctx).
@@ -108,13 +107,23 @@ func (c *HTTPClient) List(ctx context.Context) ([]Entry, error) {
 
 	entries := make([]Entry, 0, len(wire))
 	for _, entry := range wire {
-		entries = append(entries, Entry{
-			Key:   entry.Key,
-			Value: []byte(entry.Value),
-		})
+		decoded, err := entryFromHTTP(entry)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, decoded)
 	}
 
 	return entries, nil
+}
+
+func entryFromHTTP(entry httpEntry) (Entry, error) {
+	value, err := base64.StdEncoding.DecodeString(entry.Value)
+	if err != nil {
+		return Entry{}, fmt.Errorf("decode HTTP value: %w", err)
+	}
+
+	return Entry{Key: entry.Key, Value: value}, nil
 }
 
 func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error {
@@ -152,7 +161,7 @@ func (c *HTTPClient) do(response *resty.Response, err error) error {
 
 type GRPCClient struct {
 	connection *grpc.ClientConn
-	client     hyperionv1.HyperionClient
+	client     hyperionv1.HyperionServiceClient
 	timeout    time.Duration
 }
 
@@ -162,7 +171,7 @@ func NewGRPC(address string, timeout time.Duration) (*GRPCClient, error) {
 		return nil, err
 	}
 
-	return &GRPCClient{connection: connection, client: hyperionv1.NewHyperionClient(connection), timeout: timeout}, nil
+	return &GRPCClient{connection: connection, client: hyperionv1.NewHyperionServiceClient(connection), timeout: timeout}, nil
 }
 
 func (c *GRPCClient) Put(ctx context.Context, key string, value []byte) (Entry, error) {

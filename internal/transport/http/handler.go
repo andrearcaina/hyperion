@@ -77,10 +77,7 @@ func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, &KVResponse{
-		Key:   key,
-		Value: string(body),
-	})
+	writeJSON(w, http.StatusOK, newKVResponse(key, body))
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +94,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, &KVResponse{
-		Key:   key,
-		Value: string(val),
-	})
+	writeJSON(w, http.StatusOK, newKVResponse(key, val))
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -123,10 +117,7 @@ func (h *Handler) ForEach(w http.ResponseWriter, r *http.Request) {
 	results := []KVResponse{}
 
 	err := h.store.ForEach(func(key, value []byte) error {
-		results = append(results, KVResponse{
-			Key:   string(key),
-			Value: string(value),
-		})
+		results = append(results, *newKVResponse(string(key), value))
 
 		return nil
 	})

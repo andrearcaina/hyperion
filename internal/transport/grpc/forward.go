@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/andrearcaina/hyperion/internal/store"
-	hyperionv1 "github.com/andrearcaina/hyperion/proto"
+	hyperionv1 "github.com/andrearcaina/hyperion/proto/hyperion/v1"
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -18,7 +18,7 @@ func forwardRPC[T any](
 	h *Handler,
 	ctx context.Context,
 	err error,
-	call func(context.Context, hyperionv1.HyperionClient) (T, error),
+	call func(context.Context, hyperionv1.HyperionServiceClient) (T, error),
 ) (T, bool, error) {
 	var zero T
 	var leader *store.NotLeaderError
@@ -32,36 +32,36 @@ func forwardRPC[T any](
 	}
 	defer connection.Close()
 
-	response, callErr := call(forwardContext(ctx), hyperionv1.NewHyperionClient(connection))
+	response, callErr := call(forwardContext(ctx), hyperionv1.NewHyperionServiceClient(connection))
 	return response, true, callErr
 }
 
 func (h *Handler) forwardPut(ctx context.Context, req *hyperionv1.PutRequest, err error) (*hyperionv1.PutResponse, bool, error) {
-	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionClient) (*hyperionv1.PutResponse, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.PutResponse, error) {
 		return client.Put(ctx, req)
 	})
 }
 
 func (h *Handler) forwardGet(ctx context.Context, req *hyperionv1.GetRequest, err error) (*hyperionv1.GetResponse, bool, error) {
-	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionClient) (*hyperionv1.GetResponse, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.GetResponse, error) {
 		return client.Get(ctx, req)
 	})
 }
 
 func (h *Handler) forwardDelete(ctx context.Context, req *hyperionv1.DeleteRequest, err error) (*hyperionv1.DeleteResponse, bool, error) {
-	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionClient) (*hyperionv1.DeleteResponse, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.DeleteResponse, error) {
 		return client.Delete(ctx, req)
 	})
 }
 
 func (h *Handler) forwardList(ctx context.Context, req *hyperionv1.ListRequest, err error) (*hyperionv1.ListResponse, bool, error) {
-	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionClient) (*hyperionv1.ListResponse, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.ListResponse, error) {
 		return client.List(ctx, req)
 	})
 }
 
 func (h *Handler) forwardJoin(ctx context.Context, req *hyperionv1.JoinRequest, err error) (*hyperionv1.JoinResponse, bool, error) {
-	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionClient) (*hyperionv1.JoinResponse, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.JoinResponse, error) {
 		return client.Join(ctx, req)
 	})
 }

@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package hyperion.v1;
 
-option go_package = "github.com/andrearcaina/hyperion/proto;hyperionv1";
+option go_package = "github.com/andrearcaina/hyperion/proto/hyperion/v1;hyperionv1";
 
-service Hyperion {
+service HyperionService {
   rpc Put(PutRequest) returns (PutResponse);
   rpc Get(GetRequest) returns (GetResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);

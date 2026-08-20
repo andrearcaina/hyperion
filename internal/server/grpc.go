@@ -7,7 +7,7 @@ import (
 
 	"github.com/andrearcaina/hyperion/internal/logger"
 	grpctransport "github.com/andrearcaina/hyperion/internal/transport/grpc"
-	hyperionv1 "github.com/andrearcaina/hyperion/proto"
+	hyperionv1 "github.com/andrearcaina/hyperion/proto/hyperion/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -26,7 +26,7 @@ func NewGRPCServer(address string, logger *logger.Logger, handler *grpctransport
 			logger.NewGRPCLoggingInterceptor(nil),
 		),
 	)
-	hyperionv1.RegisterHyperionServer(server, handler)
+	hyperionv1.RegisterHyperionServiceServer(server, handler)
 
 	healthServer := health.NewServer()
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)

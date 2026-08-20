@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/andrearcaina/hyperion/internal/store"
-	hyperionv1 "github.com/andrearcaina/hyperion/proto"
+	hyperionv1 "github.com/andrearcaina/hyperion/proto/hyperion/v1"
 	googlegrpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +22,7 @@ type Store interface {
 }
 
 type Handler struct {
-	hyperionv1.UnimplementedHyperionServer
+	hyperionv1.UnimplementedHyperionServiceServer
 	store       Store
 	dialOptions []googlegrpc.DialOption
 }

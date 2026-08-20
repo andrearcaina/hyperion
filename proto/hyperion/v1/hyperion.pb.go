@@ -2,16 +2,17 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.21.12
-// source: proto/hyperion.proto
+// source: proto/hyperion/v1/hyperion.proto
 
 package hyperionv1
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -31,7 +32,7 @@ type Entry struct {
 
 func (x *Entry) Reset() {
 	*x = Entry{}
-	mi := &file_proto_hyperion_proto_msgTypes[0]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +44,7 @@ func (x *Entry) String() string {
 func (*Entry) ProtoMessage() {}
 
 func (x *Entry) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[0]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +57,7 @@ func (x *Entry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Entry.ProtoReflect.Descriptor instead.
 func (*Entry) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{0}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Entry) GetKey() string {
@@ -83,7 +84,7 @@ type PutRequest struct {
 
 func (x *PutRequest) Reset() {
 	*x = PutRequest{}
-	mi := &file_proto_hyperion_proto_msgTypes[1]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +96,7 @@ func (x *PutRequest) String() string {
 func (*PutRequest) ProtoMessage() {}
 
 func (x *PutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[1]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +109,7 @@ func (x *PutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutRequest.ProtoReflect.Descriptor instead.
 func (*PutRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{1}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PutRequest) GetKey() string {
@@ -134,7 +135,7 @@ type PutResponse struct {
 
 func (x *PutResponse) Reset() {
 	*x = PutResponse{}
-	mi := &file_proto_hyperion_proto_msgTypes[2]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -146,7 +147,7 @@ func (x *PutResponse) String() string {
 func (*PutResponse) ProtoMessage() {}
 
 func (x *PutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[2]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -159,7 +160,7 @@ func (x *PutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PutResponse.ProtoReflect.Descriptor instead.
 func (*PutResponse) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{2}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PutResponse) GetEntry() *Entry {
@@ -178,7 +179,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_proto_hyperion_proto_msgTypes[3]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +191,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[3]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +204,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{3}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetRequest) GetKey() string {
@@ -222,7 +223,7 @@ type GetResponse struct {
 
 func (x *GetResponse) Reset() {
 	*x = GetResponse{}
-	mi := &file_proto_hyperion_proto_msgTypes[4]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +235,7 @@ func (x *GetResponse) String() string {
 func (*GetResponse) ProtoMessage() {}
 
 func (x *GetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[4]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +248,7 @@ func (x *GetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResponse.ProtoReflect.Descriptor instead.
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{4}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetResponse) GetEntry() *Entry {
@@ -266,7 +267,7 @@ type DeleteRequest struct {
 
 func (x *DeleteRequest) Reset() {
 	*x = DeleteRequest{}
-	mi := &file_proto_hyperion_proto_msgTypes[5]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -278,7 +279,7 @@ func (x *DeleteRequest) String() string {
 func (*DeleteRequest) ProtoMessage() {}
 
 func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[5]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -291,7 +292,7 @@ func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{5}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DeleteRequest) GetKey() string {
@@ -309,7 +310,7 @@ type DeleteResponse struct {
 
 func (x *DeleteResponse) Reset() {
 	*x = DeleteResponse{}
-	mi := &file_proto_hyperion_proto_msgTypes[6]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -321,7 +322,7 @@ func (x *DeleteResponse) String() string {
 func (*DeleteResponse) ProtoMessage() {}
 
 func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[6]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -334,7 +335,7 @@ func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResponse) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{6}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{6}
 }
 
 type ListRequest struct {
@@ -345,7 +346,7 @@ type ListRequest struct {
 
 func (x *ListRequest) Reset() {
 	*x = ListRequest{}
-	mi := &file_proto_hyperion_proto_msgTypes[7]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -357,7 +358,7 @@ func (x *ListRequest) String() string {
 func (*ListRequest) ProtoMessage() {}
 
 func (x *ListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[7]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +371,7 @@ func (x *ListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRequest.ProtoReflect.Descriptor instead.
 func (*ListRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{7}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{7}
 }
 
 type ListResponse struct {
@@ -382,7 +383,7 @@ type ListResponse struct {
 
 func (x *ListResponse) Reset() {
 	*x = ListResponse{}
-	mi := &file_proto_hyperion_proto_msgTypes[8]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +395,7 @@ func (x *ListResponse) String() string {
 func (*ListResponse) ProtoMessage() {}
 
 func (x *ListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[8]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +408,7 @@ func (x *ListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResponse.ProtoReflect.Descriptor instead.
 func (*ListResponse) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{8}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListResponse) GetEntries() []*Entry {
@@ -429,7 +430,7 @@ type JoinRequest struct {
 
 func (x *JoinRequest) Reset() {
 	*x = JoinRequest{}
-	mi := &file_proto_hyperion_proto_msgTypes[9]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -441,7 +442,7 @@ func (x *JoinRequest) String() string {
 func (*JoinRequest) ProtoMessage() {}
 
 func (x *JoinRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[9]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -454,7 +455,7 @@ func (x *JoinRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinRequest.ProtoReflect.Descriptor instead.
 func (*JoinRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{9}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *JoinRequest) GetNodeId() string {
@@ -493,7 +494,7 @@ type JoinResponse struct {
 
 func (x *JoinResponse) Reset() {
 	*x = JoinResponse{}
-	mi := &file_proto_hyperion_proto_msgTypes[10]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -505,7 +506,7 @@ func (x *JoinResponse) String() string {
 func (*JoinResponse) ProtoMessage() {}
 
 func (x *JoinResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hyperion_proto_msgTypes[10]
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -518,14 +519,14 @@ func (x *JoinResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinResponse.ProtoReflect.Descriptor instead.
 func (*JoinResponse) Descriptor() ([]byte, []int) {
-	return file_proto_hyperion_proto_rawDescGZIP(), []int{10}
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{10}
 }
 
-var File_proto_hyperion_proto protoreflect.FileDescriptor
+var File_proto_hyperion_v1_hyperion_proto protoreflect.FileDescriptor
 
-const file_proto_hyperion_proto_rawDesc = "" +
+const file_proto_hyperion_v1_hyperion_proto_rawDesc = "" +
 	"\n" +
-	"\x14proto/hyperion.proto\x12\vhyperion.v1\"/\n" +
+	" proto/hyperion/v1/hyperion.proto\x12\vhyperion.v1\"/\n" +
 	"\x05Entry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\fR\x05value\"4\n" +
@@ -551,28 +552,28 @@ const file_proto_hyperion_proto_rawDesc = "" +
 	"\fraft_address\x18\x02 \x01(\tR\vraftAddress\x12!\n" +
 	"\fhttp_address\x18\x03 \x01(\tR\vhttpAddress\x12!\n" +
 	"\fgrpc_address\x18\x04 \x01(\tR\vgrpcAddress\"\x0e\n" +
-	"\fJoinResponse2\xbb\x02\n" +
-	"\bHyperion\x128\n" +
+	"\fJoinResponse2\xc2\x02\n" +
+	"\x0fHyperionService\x128\n" +
 	"\x03Put\x12\x17.hyperion.v1.PutRequest\x1a\x18.hyperion.v1.PutResponse\x128\n" +
 	"\x03Get\x12\x17.hyperion.v1.GetRequest\x1a\x18.hyperion.v1.GetResponse\x12A\n" +
 	"\x06Delete\x12\x1a.hyperion.v1.DeleteRequest\x1a\x1b.hyperion.v1.DeleteResponse\x12;\n" +
 	"\x04List\x12\x18.hyperion.v1.ListRequest\x1a\x19.hyperion.v1.ListResponse\x12;\n" +
-	"\x04Join\x12\x18.hyperion.v1.JoinRequest\x1a\x19.hyperion.v1.JoinResponseB3Z1github.com/andrearcaina/hyperion/proto;hyperionv1b\x06proto3"
+	"\x04Join\x12\x18.hyperion.v1.JoinRequest\x1a\x19.hyperion.v1.JoinResponseB?Z=github.com/andrearcaina/hyperion/proto/hyperion/v1;hyperionv1b\x06proto3"
 
 var (
-	file_proto_hyperion_proto_rawDescOnce sync.Once
-	file_proto_hyperion_proto_rawDescData []byte
+	file_proto_hyperion_v1_hyperion_proto_rawDescOnce sync.Once
+	file_proto_hyperion_v1_hyperion_proto_rawDescData []byte
 )
 
-func file_proto_hyperion_proto_rawDescGZIP() []byte {
-	file_proto_hyperion_proto_rawDescOnce.Do(func() {
-		file_proto_hyperion_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_hyperion_proto_rawDesc), len(file_proto_hyperion_proto_rawDesc)))
+func file_proto_hyperion_v1_hyperion_proto_rawDescGZIP() []byte {
+	file_proto_hyperion_v1_hyperion_proto_rawDescOnce.Do(func() {
+		file_proto_hyperion_v1_hyperion_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_hyperion_v1_hyperion_proto_rawDesc), len(file_proto_hyperion_v1_hyperion_proto_rawDesc)))
 	})
-	return file_proto_hyperion_proto_rawDescData
+	return file_proto_hyperion_v1_hyperion_proto_rawDescData
 }
 
-var file_proto_hyperion_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_proto_hyperion_proto_goTypes = []any{
+var file_proto_hyperion_v1_hyperion_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_hyperion_v1_hyperion_proto_goTypes = []any{
 	(*Entry)(nil),          // 0: hyperion.v1.Entry
 	(*PutRequest)(nil),     // 1: hyperion.v1.PutRequest
 	(*PutResponse)(nil),    // 2: hyperion.v1.PutResponse
@@ -585,20 +586,20 @@ var file_proto_hyperion_proto_goTypes = []any{
 	(*JoinRequest)(nil),    // 9: hyperion.v1.JoinRequest
 	(*JoinResponse)(nil),   // 10: hyperion.v1.JoinResponse
 }
-var file_proto_hyperion_proto_depIdxs = []int32{
+var file_proto_hyperion_v1_hyperion_proto_depIdxs = []int32{
 	0,  // 0: hyperion.v1.PutResponse.entry:type_name -> hyperion.v1.Entry
 	0,  // 1: hyperion.v1.GetResponse.entry:type_name -> hyperion.v1.Entry
 	0,  // 2: hyperion.v1.ListResponse.entries:type_name -> hyperion.v1.Entry
-	1,  // 3: hyperion.v1.Hyperion.Put:input_type -> hyperion.v1.PutRequest
-	3,  // 4: hyperion.v1.Hyperion.Get:input_type -> hyperion.v1.GetRequest
-	5,  // 5: hyperion.v1.Hyperion.Delete:input_type -> hyperion.v1.DeleteRequest
-	7,  // 6: hyperion.v1.Hyperion.List:input_type -> hyperion.v1.ListRequest
-	9,  // 7: hyperion.v1.Hyperion.Join:input_type -> hyperion.v1.JoinRequest
-	2,  // 8: hyperion.v1.Hyperion.Put:output_type -> hyperion.v1.PutResponse
-	4,  // 9: hyperion.v1.Hyperion.Get:output_type -> hyperion.v1.GetResponse
-	6,  // 10: hyperion.v1.Hyperion.Delete:output_type -> hyperion.v1.DeleteResponse
-	8,  // 11: hyperion.v1.Hyperion.List:output_type -> hyperion.v1.ListResponse
-	10, // 12: hyperion.v1.Hyperion.Join:output_type -> hyperion.v1.JoinResponse
+	1,  // 3: hyperion.v1.HyperionService.Put:input_type -> hyperion.v1.PutRequest
+	3,  // 4: hyperion.v1.HyperionService.Get:input_type -> hyperion.v1.GetRequest
+	5,  // 5: hyperion.v1.HyperionService.Delete:input_type -> hyperion.v1.DeleteRequest
+	7,  // 6: hyperion.v1.HyperionService.List:input_type -> hyperion.v1.ListRequest
+	9,  // 7: hyperion.v1.HyperionService.Join:input_type -> hyperion.v1.JoinRequest
+	2,  // 8: hyperion.v1.HyperionService.Put:output_type -> hyperion.v1.PutResponse
+	4,  // 9: hyperion.v1.HyperionService.Get:output_type -> hyperion.v1.GetResponse
+	6,  // 10: hyperion.v1.HyperionService.Delete:output_type -> hyperion.v1.DeleteResponse
+	8,  // 11: hyperion.v1.HyperionService.List:output_type -> hyperion.v1.ListResponse
+	10, // 12: hyperion.v1.HyperionService.Join:output_type -> hyperion.v1.JoinResponse
 	8,  // [8:13] is the sub-list for method output_type
 	3,  // [3:8] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
@@ -606,26 +607,26 @@ var file_proto_hyperion_proto_depIdxs = []int32{
 	0,  // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_proto_hyperion_proto_init() }
-func file_proto_hyperion_proto_init() {
-	if File_proto_hyperion_proto != nil {
+func init() { file_proto_hyperion_v1_hyperion_proto_init() }
+func file_proto_hyperion_v1_hyperion_proto_init() {
+	if File_proto_hyperion_v1_hyperion_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_hyperion_proto_rawDesc), len(file_proto_hyperion_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_hyperion_v1_hyperion_proto_rawDesc), len(file_proto_hyperion_v1_hyperion_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_hyperion_proto_goTypes,
-		DependencyIndexes: file_proto_hyperion_proto_depIdxs,
-		MessageInfos:      file_proto_hyperion_proto_msgTypes,
+		GoTypes:           file_proto_hyperion_v1_hyperion_proto_goTypes,
+		DependencyIndexes: file_proto_hyperion_v1_hyperion_proto_depIdxs,
+		MessageInfos:      file_proto_hyperion_v1_hyperion_proto_msgTypes,
 	}.Build()
-	File_proto_hyperion_proto = out.File
-	file_proto_hyperion_proto_goTypes = nil
-	file_proto_hyperion_proto_depIdxs = nil
+	File_proto_hyperion_v1_hyperion_proto = out.File
+	file_proto_hyperion_v1_hyperion_proto_goTypes = nil
+	file_proto_hyperion_v1_hyperion_proto_depIdxs = nil
 }

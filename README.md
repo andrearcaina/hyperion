@@ -133,13 +133,17 @@ The HTTP API is under `/hypr`:
 | `GET`    | `/hypr/kv/`       | list all values                       |
 | `POST`   | `/hypr/raft/join` | add a Raft voter                      |
 
-The gRPC contract is in [`proto/hyperion.proto`](proto/hyperion.proto). The
+`PUT /hypr/kv/{key}` accepts a raw byte request body (up to 4 MiB). Successful
+HTTP `PUT`, `GET`, and list responses base64-encode values so arbitrary binary
+data is preserved; for example, `{"key":"greeting","value":"aGVsbG8="}`.
+
+The gRPC contract is in [`proto/hyperion/v1/hyperion.proto`](proto/hyperion/v1/hyperion.proto). The
 server supports gRPC health checking and reflection.
 
 ### Development
 
 ```bash
-make check    # generate, vet, test, and build
+make check    # generate, imports, vet, test, and build
 make generate # regenerate protobuf bindings
 make clean    # remove local binaries
 ```
@@ -159,7 +163,7 @@ make clean    # remove local binaries
 - [ ] Build a chaos test harness for Docker and Kubernetes
     - [x] Network partitions
     - [x] `SIGKILL/kill -9` a random node
-    - [ ] Leader churn
     - [ ] Concurrent multi-client writes
+    - [ ] Leader churn
 - [ ] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

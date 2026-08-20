@@ -10,12 +10,17 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "usage: hyprchaos <scenario>")
-		os.Exit(2)
+	scenario := "all"
+
+	if len(os.Args) == 2 {
+		scenario = os.Args[1]
+	} else if len(os.Args) > 2 {
+		fmt.Fprintln(os.Stderr, "[chaos] ERROR: too many arguments")
+		fmt.Fprintln(os.Stderr, "Usage: chaos <scenario> (default: all)")
+		os.Exit(1)
 	}
 
-	if err := runChaos(os.Args[1]); err != nil {
+	if err := runChaos(scenario); err != nil {
 		fmt.Fprintln(os.Stderr, "[chaos] FAIL:", err)
 		os.Exit(1)
 	}
