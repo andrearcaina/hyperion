@@ -23,6 +23,7 @@ func (s *followerStore) Get(string) ([]byte, error)                { return nil,
 func (s *followerStore) Delete(string) error                       { return s.err }
 func (s *followerStore) ForEach(func([]byte, []byte) error) error  { return s.err }
 func (s *followerStore) Join(string, string, string, string) error { return s.err }
+func (s *followerStore) TransferLeadership(string) error           { return s.err }
 
 func TestFollowerForwardsHTTPPutToLeader(t *testing.T) {
 	transport := &recordingTransport{}
@@ -105,6 +106,36 @@ func (s *valueStore) Get(string) ([]byte, error)                { return s.value
 func (s *valueStore) Delete(string) error                       { return nil }
 func (s *valueStore) ForEach(func([]byte, []byte) error) error  { return nil }
 func (s *valueStore) Join(string, string, string, string) error { return nil }
+func (s *valueStore) TransferLeadership(string) error           { return nil }
+
+type transferStore struct {
+	target string
+}
+
+func (s *transferStore) Set(string, []byte) error                  { return nil }
+func (s *transferStore) Get(string) ([]byte, error)                { return nil, nil }
+func (s *transferStore) Delete(string) error                       { return nil }
+func (s *transferStore) ForEach(func([]byte, []byte) error) error  { return nil }
+func (s *transferStore) Join(string, string, string, string) error { return nil }
+func (s *transferStore) TransferLeadership(nodeID string) error {
+	s.target = nodeID
+	return nil
+}
+
+func TestTransferLeadership(t *testing.T) {
+	st := &transferStore{}
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/raft/transfer-leadership", strings.NewReader(`{"node_id":"n2"}`))
+
+	NewHandler(st, logger.New(nil)).ServeRoutes().ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
+	if st.target != "n2" {
+		t.Fatalf("transfer target = %q, want n2", st.target)
+	}
+}
 
 func TestGetEncodesBinaryValueAsBase64(t *testing.T) {
 	want := []byte{0xff, 0x00}

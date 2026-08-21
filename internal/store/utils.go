@@ -14,10 +14,12 @@ func isInternalKey(key []byte) bool {
 }
 
 func memberAddress(raftAddress, advertisedAddress, localAddress string) (string, error) {
+	// idea is to use the advertised address if it is set, otherwise use the raft address with the local port
 	if advertisedAddress != "" {
 		if _, _, err := net.SplitHostPort(advertisedAddress); err != nil {
 			return "", err
 		}
+
 		return advertisedAddress, nil
 	}
 

@@ -19,6 +19,7 @@ func (h *Handler) forwardToLeader(w http.ResponseWriter, r *http.Request, err er
 
 	r.Header.Set(forwardedRequestHeader, "1")
 	h.newLeaderProxy(leader).ServeHTTP(w, r)
+
 	return true
 }
 
@@ -40,6 +41,7 @@ func (h *Handler) newLeaderProxy(leader *store.NotLeaderError) *httputil.Reverse
 	proxy.Transport = h.proxyTransport
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		h.logger.Error(r.Context(), "failed to forward request to leader", "leader", leader.LeaderID, "error", err)
+
 		writeError(w, http.StatusBadGateway, errors.New("failed to reach Raft leader"))
 	}
 

@@ -19,6 +19,7 @@ type Store interface {
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
 	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
+	TransferLeadership(nodeID string) error
 }
 
 type Handler struct {
@@ -41,6 +42,7 @@ func (h *Handler) Put(ctx context.Context, req *hyperionv1.PutRequest) (*hyperio
 		if response, forwarded, forwardErr := h.forwardPut(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
+
 		return nil, grpcError(err)
 	}
 
@@ -53,6 +55,7 @@ func (h *Handler) Get(ctx context.Context, req *hyperionv1.GetRequest) (*hyperio
 		if response, forwarded, forwardErr := h.forwardGet(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
+
 		return nil, grpcError(err)
 	}
 
@@ -64,6 +67,7 @@ func (h *Handler) Delete(ctx context.Context, req *hyperionv1.DeleteRequest) (*h
 		if response, forwarded, forwardErr := h.forwardDelete(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
+
 		return nil, grpcError(err)
 	}
 
@@ -74,11 +78,13 @@ func (h *Handler) List(ctx context.Context, req *hyperionv1.ListRequest) (*hyper
 	response := &hyperionv1.ListResponse{}
 	if err := h.store.ForEach(func(key, value []byte) error {
 		response.Entries = append(response.Entries, &hyperionv1.Entry{Key: string(key), Value: value})
+
 		return nil
 	}); err != nil {
 		if response, forwarded, forwardErr := h.forwardList(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
+
 		return nil, grpcError(err)
 	}
 
@@ -91,10 +97,23 @@ func (h *Handler) Join(ctx context.Context, req *hyperionv1.JoinRequest) (*hyper
 		if response, forwarded, forwardErr := h.forwardJoin(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
+
 		return nil, grpcError(err)
 	}
 
 	return &hyperionv1.JoinResponse{}, nil
+}
+
+func (h *Handler) TransferLeadership(ctx context.Context, req *hyperionv1.TransferLeadershipRequest) (*hyperionv1.TransferLeadershipResponse, error) {
+	if err := h.store.TransferLeadership(req.GetNodeId()); err != nil {
+		if response, forwarded, forwardErr := h.forwardTransferLeadership(ctx, req, err); forwarded {
+			return response, forwardErr
+		}
+
+		return nil, grpcError(err)
+	}
+
+	return &hyperionv1.TransferLeadershipResponse{}, nil
 }
 
 func grpcError(err error) error {

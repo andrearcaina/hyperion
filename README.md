@@ -67,12 +67,13 @@ With the three-node Compose cluster running, you can run a chaos test scenario:
 make test-chaos scenario=<test-scenario>
 ```
 
-The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes`,and `all`.
+The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes`, `leader-churn`, and `all`.
 `network-partition` simulates a network partition between the leader and the followers.
 `sigkill` sends `SIGKILL/kill -9` to a node container, verifies that the remaining majority can
 still commit writes, restarts the killed node, and checks that it catches up.
 `concurrent-writes` runs 12 concurrent clients writing 10 key each, and then verifies every acknowledge write from another node.
-`all` runs all three scenarios in sequence.
+`leader-churn` deliberately transfers leadership from node 1 to node 2 to node 3 and back to node 1, while verifying that writes are still committed.
+`all` runs all four scenarios in sequence.
 
 ### Run Locally
 
@@ -127,13 +128,14 @@ nodes share a host and therefore listen on different ports.
 
 The HTTP API is under `/hypr`:
 
-| Method   | Path              | Operation                             |
-| -------- | ----------------- | ------------------------------------- |
-| `PUT`    | `/hypr/kv/{key}`  | set a value from the raw request body |
-| `GET`    | `/hypr/kv/{key}`  | get a value                           |
-| `DELETE` | `/hypr/kv/{key}`  | delete a value (idempotent)           |
-| `GET`    | `/hypr/kv/`       | list all values                       |
-| `POST`   | `/hypr/raft/join` | add a Raft voter                      |
+| Method   | Path                             | Operation                             |
+| -------- | -------------------------------- | ------------------------------------- |
+| `PUT`    | `/hypr/kv/{key}`                 | set a value from the raw request body |
+| `GET`    | `/hypr/kv/{key}`                 | get a value                           |
+| `DELETE` | `/hypr/kv/{key}`                 | delete a value (idempotent)           |
+| `GET`    | `/hypr/kv/`                      | list all values                       |
+| `POST`   | `/hypr/raft/join`                | add a Raft voter                      |
+| `POST`   | `/hypr/raft/transfer-leadership` | transfer leadership to a voter        |
 
 `PUT /hypr/kv/{key}` accepts a raw byte request body (up to 4 MiB). Successful
 HTTP `PUT`, `GET`, and list responses base64-encode values so arbitrary binary
@@ -166,6 +168,6 @@ make clean    # remove local binaries
     - [x] Network partitions
     - [x] `SIGKILL/kill -9` a random node
     - [x] Concurrent multi-client writes
-    - [ ] Leader churn
+    - [x] Leader churn
 - [ ] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

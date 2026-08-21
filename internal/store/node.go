@@ -147,6 +147,41 @@ func (n *Node) Join(nodeID, nodeAddress string) error {
 	return nil
 }
 
+func (n *Node) TransferLeadership(nodeID string) error {
+	if !n.IsLeader() {
+		return n.notLeaderError()
+	}
+	if nodeID == n.cfg.NodeID {
+		return nil
+	}
+
+	configuration := n.raft.GetConfiguration()
+	if err := configuration.Error(); err != nil {
+		return fmt.Errorf("read Raft configuration: %w", err)
+	}
+
+	for _, server := range configuration.Configuration().Servers {
+		if server.ID != raft.ServerID(nodeID) {
+			continue
+		}
+		if server.Suffrage != raft.Voter {
+			return fmt.Errorf("Raft member %q is not a voter", nodeID)
+		}
+
+		if err := n.raft.LeadershipTransferToServer(server.ID, server.Address).Error(); err != nil {
+			if errors.Is(err, raft.ErrNotLeader) || errors.Is(err, raft.ErrLeadershipLost) {
+				return n.notLeaderError()
+			}
+
+			return err
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("Raft member %q not found", nodeID)
+}
+
 func (n *Node) AddVoter(nodeID, nodeAddress string) error {
 	return n.raft.AddVoter(
 		raft.ServerID(nodeID),
@@ -170,6 +205,7 @@ func (n *Node) VerifyLeader() error {
 
 func (n *Node) notLeaderError() error {
 	leaderAddress, leaderID := n.raft.LeaderWithID()
+
 	return &NotLeaderError{
 		NodeID:        n.cfg.NodeID,
 		LeaderID:      string(leaderID),
@@ -207,6 +243,7 @@ func (n *Node) waitForLeadership(timeout time.Duration) error {
 }
 func (n *Node) Close() error {
 	var errs []error
+
 	if err := n.raft.Shutdown().Error(); err != nil {
 		errs = append(errs, err)
 	}

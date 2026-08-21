@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	HyperionService_Put_FullMethodName    = "/hyperion.v1.HyperionService/Put"
-	HyperionService_Get_FullMethodName    = "/hyperion.v1.HyperionService/Get"
-	HyperionService_Delete_FullMethodName = "/hyperion.v1.HyperionService/Delete"
-	HyperionService_List_FullMethodName   = "/hyperion.v1.HyperionService/List"
-	HyperionService_Join_FullMethodName   = "/hyperion.v1.HyperionService/Join"
+	HyperionService_Put_FullMethodName                = "/hyperion.v1.HyperionService/Put"
+	HyperionService_Get_FullMethodName                = "/hyperion.v1.HyperionService/Get"
+	HyperionService_Delete_FullMethodName             = "/hyperion.v1.HyperionService/Delete"
+	HyperionService_List_FullMethodName               = "/hyperion.v1.HyperionService/List"
+	HyperionService_Join_FullMethodName               = "/hyperion.v1.HyperionService/Join"
+	HyperionService_TransferLeadership_FullMethodName = "/hyperion.v1.HyperionService/TransferLeadership"
 )
 
 // HyperionServiceClient is the client API for HyperionService service.
@@ -36,6 +37,7 @@ type HyperionServiceClient interface {
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	Join(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error)
+	TransferLeadership(ctx context.Context, in *TransferLeadershipRequest, opts ...grpc.CallOption) (*TransferLeadershipResponse, error)
 }
 
 type hyperionServiceClient struct {
@@ -96,6 +98,16 @@ func (c *hyperionServiceClient) Join(ctx context.Context, in *JoinRequest, opts 
 	return out, nil
 }
 
+func (c *hyperionServiceClient) TransferLeadership(ctx context.Context, in *TransferLeadershipRequest, opts ...grpc.CallOption) (*TransferLeadershipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TransferLeadershipResponse)
+	err := c.cc.Invoke(ctx, HyperionService_TransferLeadership_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HyperionServiceServer is the server API for HyperionService service.
 // All implementations must embed UnimplementedHyperionServiceServer
 // for forward compatibility.
@@ -105,6 +117,7 @@ type HyperionServiceServer interface {
 	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	Join(context.Context, *JoinRequest) (*JoinResponse, error)
+	TransferLeadership(context.Context, *TransferLeadershipRequest) (*TransferLeadershipResponse, error)
 	mustEmbedUnimplementedHyperionServiceServer()
 }
 
@@ -129,6 +142,9 @@ func (UnimplementedHyperionServiceServer) List(context.Context, *ListRequest) (*
 }
 func (UnimplementedHyperionServiceServer) Join(context.Context, *JoinRequest) (*JoinResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Join not implemented")
+}
+func (UnimplementedHyperionServiceServer) TransferLeadership(context.Context, *TransferLeadershipRequest) (*TransferLeadershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransferLeadership not implemented")
 }
 func (UnimplementedHyperionServiceServer) mustEmbedUnimplementedHyperionServiceServer() {}
 func (UnimplementedHyperionServiceServer) testEmbeddedByValue()                         {}
@@ -241,6 +257,24 @@ func _HyperionService_Join_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HyperionService_TransferLeadership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferLeadershipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HyperionServiceServer).TransferLeadership(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HyperionService_TransferLeadership_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HyperionServiceServer).TransferLeadership(ctx, req.(*TransferLeadershipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HyperionService_ServiceDesc is the grpc.ServiceDesc for HyperionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +301,10 @@ var HyperionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Join",
 			Handler:    _HyperionService_Join_Handler,
+		},
+		{
+			MethodName: "TransferLeadership",
+			Handler:    _HyperionService_TransferLeadership_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

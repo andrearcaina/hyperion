@@ -17,7 +17,8 @@ import (
 )
 
 type memoryStore struct {
-	values map[string][]byte
+	values                 map[string][]byte
+	leadershipTransferToID string
 }
 
 func (s *memoryStore) Set(key string, value []byte) error {
@@ -40,6 +41,10 @@ func (s *memoryStore) Get(key string) ([]byte, error) {
 
 func (s *memoryStore) Delete(key string) error      { delete(s.values, key); return nil }
 func (s *memoryStore) Join(_, _, _, _ string) error { return nil }
+func (s *memoryStore) TransferLeadership(nodeID string) error {
+	s.leadershipTransferToID = nodeID
+	return nil
+}
 func (s *memoryStore) ForEach(fn func([]byte, []byte) error) error {
 	keys := make([]string, 0, len(s.values))
 	for key := range s.values {
@@ -65,9 +70,11 @@ func (s *followerStore) Get(string) ([]byte, error)                { return nil,
 func (s *followerStore) Delete(string) error                       { return s.err }
 func (s *followerStore) ForEach(func([]byte, []byte) error) error  { return s.err }
 func (s *followerStore) Join(string, string, string, string) error { return s.err }
+func (s *followerStore) TransferLeadership(string) error           { return s.err }
 
 func TestHandlerRoundTrip(t *testing.T) {
-	client := newTestClient(t, &memoryStore{values: make(map[string][]byte)})
+	st := &memoryStore{values: make(map[string][]byte)}
+	client := newTestClient(t, st)
 	ctx := context.Background()
 
 	if _, err := client.Put(ctx, &hyperionv1.PutRequest{Key: "hello", Value: []byte("world")}); err != nil {
@@ -85,6 +92,13 @@ func TestHandlerRoundTrip(t *testing.T) {
 
 	if _, err := client.Delete(ctx, &hyperionv1.DeleteRequest{Key: "hello"}); err != nil {
 		t.Fatal(err)
+	}
+
+	if _, err := client.TransferLeadership(ctx, &hyperionv1.TransferLeadershipRequest{NodeId: "n2"}); err != nil {
+		t.Fatal(err)
+	}
+	if st.leadershipTransferToID != "n2" {
+		t.Fatalf("transfer target = %q, want n2", st.leadershipTransferToID)
 	}
 
 	_, err = client.Get(ctx, &hyperionv1.GetRequest{Key: "hello"})

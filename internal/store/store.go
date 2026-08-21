@@ -95,6 +95,14 @@ func (s *Store) Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
 	return s.saveMemberAddresses(nodeID, addresses)
 }
 
+func (s *Store) TransferLeadership(nodeID string) error {
+	if nodeID == "" {
+		return errors.New("node ID is required")
+	}
+
+	return s.withLeaderAddresses(s.node.TransferLeadership(nodeID))
+}
+
 func (s *Store) Get(key string) ([]byte, error) {
 	if invalidUserKey(key) {
 		return nil, ErrInvalidKey

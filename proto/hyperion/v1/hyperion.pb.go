@@ -522,6 +522,86 @@ func (*JoinResponse) Descriptor() ([]byte, []int) {
 	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{10}
 }
 
+type TransferLeadershipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransferLeadershipRequest) Reset() {
+	*x = TransferLeadershipRequest{}
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransferLeadershipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransferLeadershipRequest) ProtoMessage() {}
+
+func (x *TransferLeadershipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransferLeadershipRequest.ProtoReflect.Descriptor instead.
+func (*TransferLeadershipRequest) Descriptor() ([]byte, []int) {
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TransferLeadershipRequest) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+type TransferLeadershipResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TransferLeadershipResponse) Reset() {
+	*x = TransferLeadershipResponse{}
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransferLeadershipResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransferLeadershipResponse) ProtoMessage() {}
+
+func (x *TransferLeadershipResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_hyperion_v1_hyperion_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransferLeadershipResponse.ProtoReflect.Descriptor instead.
+func (*TransferLeadershipResponse) Descriptor() ([]byte, []int) {
+	return file_proto_hyperion_v1_hyperion_proto_rawDescGZIP(), []int{12}
+}
+
 var File_proto_hyperion_v1_hyperion_proto protoreflect.FileDescriptor
 
 const file_proto_hyperion_v1_hyperion_proto_rawDesc = "" +
@@ -552,13 +632,17 @@ const file_proto_hyperion_v1_hyperion_proto_rawDesc = "" +
 	"\fraft_address\x18\x02 \x01(\tR\vraftAddress\x12!\n" +
 	"\fhttp_address\x18\x03 \x01(\tR\vhttpAddress\x12!\n" +
 	"\fgrpc_address\x18\x04 \x01(\tR\vgrpcAddress\"\x0e\n" +
-	"\fJoinResponse2\xc2\x02\n" +
+	"\fJoinResponse\"4\n" +
+	"\x19TransferLeadershipRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"\x1c\n" +
+	"\x1aTransferLeadershipResponse2\xa9\x03\n" +
 	"\x0fHyperionService\x128\n" +
 	"\x03Put\x12\x17.hyperion.v1.PutRequest\x1a\x18.hyperion.v1.PutResponse\x128\n" +
 	"\x03Get\x12\x17.hyperion.v1.GetRequest\x1a\x18.hyperion.v1.GetResponse\x12A\n" +
 	"\x06Delete\x12\x1a.hyperion.v1.DeleteRequest\x1a\x1b.hyperion.v1.DeleteResponse\x12;\n" +
 	"\x04List\x12\x18.hyperion.v1.ListRequest\x1a\x19.hyperion.v1.ListResponse\x12;\n" +
-	"\x04Join\x12\x18.hyperion.v1.JoinRequest\x1a\x19.hyperion.v1.JoinResponseB?Z=github.com/andrearcaina/hyperion/proto/hyperion/v1;hyperionv1b\x06proto3"
+	"\x04Join\x12\x18.hyperion.v1.JoinRequest\x1a\x19.hyperion.v1.JoinResponse\x12e\n" +
+	"\x12TransferLeadership\x12&.hyperion.v1.TransferLeadershipRequest\x1a'.hyperion.v1.TransferLeadershipResponseB?Z=github.com/andrearcaina/hyperion/proto/hyperion/v1;hyperionv1b\x06proto3"
 
 var (
 	file_proto_hyperion_v1_hyperion_proto_rawDescOnce sync.Once
@@ -572,19 +656,21 @@ func file_proto_hyperion_v1_hyperion_proto_rawDescGZIP() []byte {
 	return file_proto_hyperion_v1_hyperion_proto_rawDescData
 }
 
-var file_proto_hyperion_v1_hyperion_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_hyperion_v1_hyperion_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_proto_hyperion_v1_hyperion_proto_goTypes = []any{
-	(*Entry)(nil),          // 0: hyperion.v1.Entry
-	(*PutRequest)(nil),     // 1: hyperion.v1.PutRequest
-	(*PutResponse)(nil),    // 2: hyperion.v1.PutResponse
-	(*GetRequest)(nil),     // 3: hyperion.v1.GetRequest
-	(*GetResponse)(nil),    // 4: hyperion.v1.GetResponse
-	(*DeleteRequest)(nil),  // 5: hyperion.v1.DeleteRequest
-	(*DeleteResponse)(nil), // 6: hyperion.v1.DeleteResponse
-	(*ListRequest)(nil),    // 7: hyperion.v1.ListRequest
-	(*ListResponse)(nil),   // 8: hyperion.v1.ListResponse
-	(*JoinRequest)(nil),    // 9: hyperion.v1.JoinRequest
-	(*JoinResponse)(nil),   // 10: hyperion.v1.JoinResponse
+	(*Entry)(nil),                      // 0: hyperion.v1.Entry
+	(*PutRequest)(nil),                 // 1: hyperion.v1.PutRequest
+	(*PutResponse)(nil),                // 2: hyperion.v1.PutResponse
+	(*GetRequest)(nil),                 // 3: hyperion.v1.GetRequest
+	(*GetResponse)(nil),                // 4: hyperion.v1.GetResponse
+	(*DeleteRequest)(nil),              // 5: hyperion.v1.DeleteRequest
+	(*DeleteResponse)(nil),             // 6: hyperion.v1.DeleteResponse
+	(*ListRequest)(nil),                // 7: hyperion.v1.ListRequest
+	(*ListResponse)(nil),               // 8: hyperion.v1.ListResponse
+	(*JoinRequest)(nil),                // 9: hyperion.v1.JoinRequest
+	(*JoinResponse)(nil),               // 10: hyperion.v1.JoinResponse
+	(*TransferLeadershipRequest)(nil),  // 11: hyperion.v1.TransferLeadershipRequest
+	(*TransferLeadershipResponse)(nil), // 12: hyperion.v1.TransferLeadershipResponse
 }
 var file_proto_hyperion_v1_hyperion_proto_depIdxs = []int32{
 	0,  // 0: hyperion.v1.PutResponse.entry:type_name -> hyperion.v1.Entry
@@ -595,13 +681,15 @@ var file_proto_hyperion_v1_hyperion_proto_depIdxs = []int32{
 	5,  // 5: hyperion.v1.HyperionService.Delete:input_type -> hyperion.v1.DeleteRequest
 	7,  // 6: hyperion.v1.HyperionService.List:input_type -> hyperion.v1.ListRequest
 	9,  // 7: hyperion.v1.HyperionService.Join:input_type -> hyperion.v1.JoinRequest
-	2,  // 8: hyperion.v1.HyperionService.Put:output_type -> hyperion.v1.PutResponse
-	4,  // 9: hyperion.v1.HyperionService.Get:output_type -> hyperion.v1.GetResponse
-	6,  // 10: hyperion.v1.HyperionService.Delete:output_type -> hyperion.v1.DeleteResponse
-	8,  // 11: hyperion.v1.HyperionService.List:output_type -> hyperion.v1.ListResponse
-	10, // 12: hyperion.v1.HyperionService.Join:output_type -> hyperion.v1.JoinResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
+	11, // 8: hyperion.v1.HyperionService.TransferLeadership:input_type -> hyperion.v1.TransferLeadershipRequest
+	2,  // 9: hyperion.v1.HyperionService.Put:output_type -> hyperion.v1.PutResponse
+	4,  // 10: hyperion.v1.HyperionService.Get:output_type -> hyperion.v1.GetResponse
+	6,  // 11: hyperion.v1.HyperionService.Delete:output_type -> hyperion.v1.DeleteResponse
+	8,  // 12: hyperion.v1.HyperionService.List:output_type -> hyperion.v1.ListResponse
+	10, // 13: hyperion.v1.HyperionService.Join:output_type -> hyperion.v1.JoinResponse
+	12, // 14: hyperion.v1.HyperionService.TransferLeadership:output_type -> hyperion.v1.TransferLeadershipResponse
+	9,  // [9:15] is the sub-list for method output_type
+	3,  // [3:9] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -618,7 +706,7 @@ func file_proto_hyperion_v1_hyperion_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_hyperion_v1_hyperion_proto_rawDesc), len(file_proto_hyperion_v1_hyperion_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

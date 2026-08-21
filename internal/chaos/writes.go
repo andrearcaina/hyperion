@@ -32,17 +32,15 @@ func (h *Harness) ConcurrentWritesChaos(ctx context.Context) error {
 	}
 
 	defer func() {
-		for _, client := range clients {
-			_ = client.Close()
-		}
-	}()
-
-	defer func() {
 		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		for _, key := range keys {
 			_ = clients[0].Delete(cleanupCtx, key)
+		}
+
+		for _, client := range clients {
+			_ = client.Close()
 		}
 	}()
 

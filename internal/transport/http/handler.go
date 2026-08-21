@@ -19,6 +19,7 @@ type Store interface {
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
 	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
+	TransferLeadership(nodeID string) error
 }
 
 type Handler struct {
@@ -46,6 +47,7 @@ func (h *Handler) ServeRoutes() chi.Router {
 
 	r.Route("/raft", func(r chi.Router) {
 		r.Post("/join", h.Join)
+		r.Post("/transfer-leadership", h.TransferLeadership)
 	})
 
 	return r
@@ -57,9 +59,8 @@ func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) Set(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
-	const maxValueSize = 4 << 20
 
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxValueSize))
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 4<<20))
 	if err != nil {
 		h.logger.Debug(r.Context(), "failed to read request body", "error", err)
 		writeError(w, http.StatusBadRequest, fmt.Errorf("failed to read request body: %v", err))
@@ -154,12 +155,43 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		h.logger.Error(r.Context(), "failed to join node", "error", err)
 		writeStoreError(w, err)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
 		"status": "joined",
+	})
+}
+
+func (h *Handler) TransferLeadership(w http.ResponseWriter, r *http.Request) {
+	var req TransferLeadershipRequest
+
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.store.TransferLeadership(req.NodeID); err != nil {
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		if h.forwardToLeader(w, r, err) {
+			return
+		}
+
+		h.logger.Error(r.Context(), "failed to transfer leadership", "error", err)
+		writeStoreError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":  "leadership transferred",
+		"node_id": req.NodeID,
 	})
 }
 

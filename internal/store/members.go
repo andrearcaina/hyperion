@@ -40,19 +40,24 @@ func (s *Store) withLeaderAddresses(err error) error {
 		return err
 	}
 
-	decorated := *notLeader
-	data, getErr := s.db.Get([]byte(memberKeyPrefix + notLeader.LeaderID))
-	if getErr != nil {
-		decorated.LeaderHTTPAddress, _ = memberAddress(notLeader.LeaderAddress, "", s.node.cfg.HTTPAddress)
-		decorated.LeaderGRPCAddress, _ = memberAddress(notLeader.LeaderAddress, "", s.node.cfg.GRPCAddress)
-		return &decorated
-	}
+	decorated := *notLeader // don't mutate the original error
 
 	var addresses memberAddresses
-	if json.Unmarshal(data, &addresses) == nil {
-		decorated.LeaderHTTPAddress = addresses.HTTP
-		decorated.LeaderGRPCAddress = addresses.GRPC
+	data, err := s.db.Get([]byte(memberKeyPrefix + notLeader.LeaderID))
+	if err == nil {
+		_ = json.Unmarshal(data, &addresses)
 	}
+
+	// if we don't have the addresses in the store, try to resolve them from the leader's raft address
+	if addresses.HTTP == "" {
+		addresses.HTTP, _ = memberAddress(notLeader.LeaderAddress, "", s.node.cfg.HTTPAddress)
+	}
+	if addresses.GRPC == "" {
+		addresses.GRPC, _ = memberAddress(notLeader.LeaderAddress, "", s.node.cfg.GRPCAddress)
+	}
+
+	decorated.LeaderHTTPAddress = addresses.HTTP
+	decorated.LeaderGRPCAddress = addresses.GRPC
 
 	return &decorated
 }

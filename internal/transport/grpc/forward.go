@@ -66,6 +66,12 @@ func (h *Handler) forwardJoin(ctx context.Context, req *hyperionv1.JoinRequest, 
 	})
 }
 
+func (h *Handler) forwardTransferLeadership(ctx context.Context, req *hyperionv1.TransferLeadershipRequest, err error) (*hyperionv1.TransferLeadershipResponse, bool, error) {
+	return forwardRPC(h, ctx, err, func(ctx context.Context, client hyperionv1.HyperionServiceClient) (*hyperionv1.TransferLeadershipResponse, error) {
+		return client.TransferLeadership(ctx, req)
+	})
+}
+
 func wasForwarded(ctx context.Context) bool {
 	return len(metadata.ValueFromIncomingContext(ctx, forwardedMetadataKey)) != 0
 }

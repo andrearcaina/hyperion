@@ -15,6 +15,10 @@ type JoinRequest struct {
 	GRPCAddress string `json:"grpc_address,omitempty"`
 }
 
+type TransferLeadershipRequest struct {
+	NodeID string `json:"node_id"`
+}
+
 func newKVResponse(key string, value []byte) *KVResponse {
 	return &KVResponse{
 		Key:   key,
