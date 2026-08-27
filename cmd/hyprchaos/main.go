@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/andrearcaina/hyperion/internal/chaos"
+	"github.com/andrearcaina/hyperion/internal/test/chaos"
 )
 
 type scenario struct {

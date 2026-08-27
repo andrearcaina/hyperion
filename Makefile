@@ -1,5 +1,5 @@
-.PHONY: generate build imports vet \
-	test test-smoke test-chaos check \
+.PHONY: generate build imports tidy vet \
+	test test-integration test-smoke test-chaos check \
 	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean
 
 scenario ?= all
@@ -17,19 +17,25 @@ build:
 imports:
 	goimports -w .
 
+tidy:
+	go mod tidy
+
 vet:
 	go vet ./...
 
 test:
 	go test ./...
 
+test-integration:
+	go test -tags=integration ./internal/test/integration
+
 test-smoke:
-	go test -tags=smoke ./internal/chaos
+	go test -tags=smoke ./internal/test/chaos
 
 test-chaos:
 	go run ./cmd/hyprchaos $(scenario)
 
-check: generate imports vet test build
+check: tidy generate imports vet test build
 
 clean:
 	rm -f ./bin/hyprd ./bin/hyprctl

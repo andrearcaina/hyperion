@@ -169,5 +169,5 @@ make clean    # remove local binaries
     - [x] `SIGKILL/kill -9` a random node
     - [x] Concurrent multi-client writes
     - [x] Leader churn
-- [ ] Add proper integration tests for entire cluster
+- [x] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

@@ -69,10 +69,12 @@ func (c *HTTPClient) Put(ctx context.Context, key string, value []byte) (Entry, 
 		SetBody(value).
 		SetResult(&wire).
 		Put("/hypr/kv/" + url.PathEscape(key)))
+
 	entry, decodeErr := entryFromHTTP(wire)
 	if err != nil {
 		return entry, err
 	}
+
 	return entry, decodeErr
 }
 
@@ -83,10 +85,12 @@ func (c *HTTPClient) Get(ctx context.Context, key string) (Entry, error) {
 		SetContext(ctx).
 		SetResult(&wire).
 		Get("/hypr/kv/" + url.PathEscape(key)))
+
 	entry, decodeErr := entryFromHTTP(wire)
 	if err != nil {
 		return entry, err
 	}
+
 	return entry, decodeErr
 }
 
@@ -112,6 +116,7 @@ func (c *HTTPClient) List(ctx context.Context) ([]Entry, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		entries = append(entries, decoded)
 	}
 
@@ -124,7 +129,10 @@ func entryFromHTTP(entry httpEntry) (Entry, error) {
 		return Entry{}, fmt.Errorf("decode HTTP value: %w", err)
 	}
 
-	return Entry{Key: entry.Key, Value: value}, nil
+	return Entry{
+		Key:   entry.Key,
+		Value: value,
+	}, nil
 }
 
 func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error {
@@ -140,9 +148,11 @@ func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress,
 }
 
 func (c *HTTPClient) TransferLeadership(ctx context.Context, nodeID string) error {
+	body := map[string]string{"node_id": nodeID}
+
 	return c.do(c.client.R().
 		SetContext(ctx).
-		SetBody(map[string]string{"node_id": nodeID}).
+		SetBody(body).
 		Post("/hypr/raft/transfer-leadership"))
 }
 
@@ -155,7 +165,7 @@ func (c *HTTPClient) do(response *resty.Response, err error) error {
 		return err
 	}
 
-	if !response.IsError() {
+	if response.IsStatusSuccess() {
 		return nil
 	}
 
@@ -179,7 +189,11 @@ func NewGRPC(address string, timeout time.Duration) (*GRPCClient, error) {
 		return nil, err
 	}
 
-	return &GRPCClient{connection: connection, client: hyperionv1.NewHyperionServiceClient(connection), timeout: timeout}, nil
+	return &GRPCClient{
+		connection: connection,
+		client:     hyperionv1.NewHyperionServiceClient(connection),
+		timeout:    timeout,
+	}, nil
 }
 
 func (c *GRPCClient) Put(ctx context.Context, key string, value []byte) (Entry, error) {
