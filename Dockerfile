@@ -19,6 +19,7 @@ RUN addgroup -S hyperion && \
     chown -R hyperion:hyperion /home/hyperion/.hyperion
 
 COPY --from=builder /out/hyprd /out/hyprctl /usr/local/bin/
+COPY scripts/bootstrap.sh /usr/local/bin/bootstrap.sh
 
 USER hyperion
 WORKDIR /home/hyperion

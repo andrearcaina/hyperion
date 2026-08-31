@@ -26,9 +26,9 @@ or coordinates the write through Raft.
 ```text
                          forwarded request
 Client ──────> Follower ───────────────────> Leader ──────> Store ──────> Raft
-               │                            │
-               ├─ HTTP reverse proxy        ├─ HTTP handler
-               └─ gRPC forwarding           └─ gRPC handler
+               │                             │
+               ├─ HTTP reverse proxy         ├─ HTTP handler
+               └─ gRPC forwarding            └─ gRPC handler
 ```
 
 Data is stored under `~/.hyperion/data/<node-id>`.
@@ -48,20 +48,48 @@ and joins nodes 2 and 3. The nodes publish HTTP on ports `8080`, `8082`, and
 `8084`; gRPC on `8081`, `8083`, and `8085`; and Raft on `9001`, `9002`, and `9003`.
 
 ```bash
-docker compose exec node-1 hyprctl set greeting hello
-docker compose exec node-1 hyprctl get greeting
+docker compose -f deployments/docker/compose.yml exec node-1 \
+    hyprctl set greeting hello
+docker compose -f deployments/docker/compose.yml exec node-1 \
+    hyprctl get greeting
 ```
 
-The image includes both `hyprd` and `hyprctl`. You can also run `make build`
-and use the local `hyprctl` in the `bin/` directory against the Docker cluster.
+The image includes both `hyprd` and `hyprctl`. You can also run `make install`
+and use the local `hyprctl` installed to access the containers/nodes.
 
 Use `make docker-config` to validate the Compose configuration, and
 `make docker-status` or `make docker-logs` to inspect the cluster. Run
 `make docker-stop` to preserve its data or `make docker-clean` to delete it.
 
+### Run with Kubernetes (`kind`)
+
+For a local Kubernetes cluster, install Docker, `kubectl`, and
+[`kind`](https://kind.sigs.k8s.io/), then run:
+
+```bash
+make k8s-start
+```
+
+This creates a disposable three-node kind cluster, builds and loads the local
+image, deploys a three-pod StatefulSet, and bootstraps the Raft group. Run
+`make k8s-smoke` for a repeatable write/read test across different pods. For
+interactive access, run `make k8s-forward` in one terminal, then use the
+Hyperion CLI from another:
+
+```bash
+hyprctl --addr http://127.0.0.1:8080 set greeting hello
+hyprctl --addr http://127.0.0.1:8080 get greeting
+```
+
+Inspect it with `make k8s-status` or `make k8s-logs pod=hyperion-0`. Remove the
+cluster with `make k8s-stop`.
+
+The kind deployment uses `emptyDir` storage because the cluster is intended
+for integration tests. It is not a production persistence configuration.
+
 #### Chaos testing
 
-With the three-node Compose cluster running, you can run a chaos test scenario:
+With the three-node Compose cluster running (will implement for K8s later), you can run a chaos test scenario:
 
 ```bash
 make test-chaos scenario=<test-scenario>
@@ -80,7 +108,7 @@ still commit writes, restarts the killed node, and checks that it catches up.
 Build and start one node:
 
 ```bash
-make build
+make install
 hyprd --bootstrap
 ```
 
@@ -147,7 +175,7 @@ server supports gRPC health checking and reflection.
 ### Development
 
 ```bash
-make check    # generate, imports, vet, test, and build
+make check    # tidy, generate, imports, vet, test, and build
 make generate # regenerate protobuf bindings
 make clean    # remove local binaries
 ```
@@ -163,11 +191,12 @@ make clean    # remove local binaries
 - [x] Implement `hyprctl` CLI to interact with running `hyprd` nodes
 - [x] Add gRPC API support
 - [x] Add Docker support
-- [ ] Add Kubernetes support
-- [ ] Build a chaos test harness for Docker and Kubernetes
+- [x] Add Kubernetes support (using kind)
+- [x] Build a chaos test harness for Docker
     - [x] Network partitions
     - [x] `SIGKILL/kill -9` a random node
     - [x] Concurrent multi-client writes
     - [x] Leader churn
+- [ ] Do the same chaos test harness for Kubernetes
 - [x] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: hyperion
+    namespace: hyperion
+spec:
+    serviceName: hyperion
+    replicas: 3
+    podManagementPolicy: Parallel
+    selector:
+        matchLabels:
+            app: hyperion
+    template:
+        metadata:
+            labels:
+                app: hyperion
+        spec:
+            containers:
+                - name: hyperion
+                  image: hyperion:local
+                  imagePullPolicy: IfNotPresent
+                  command: ["/bin/sh", "-ec"]
+                  args:
+                      - |
+                          node_addr="${HOSTNAME}.hyperion:9001"
+                          if [ "${HOSTNAME}" = "hyperion-0" ]; then
+                            exec hyprd --node-id "${HOSTNAME}" --node-addr "${node_addr}" --bootstrap
+                          fi
+                          exec hyprd --node-id "${HOSTNAME}" --node-addr "${node_addr}"
+                  ports:
+                      - name: http
+                        containerPort: 8080
+                      - name: grpc
+                        containerPort: 8081
+                      - name: raft
+                        containerPort: 9001
+                  readinessProbe:
+                      httpGet:
+                          path: /healthz
+                          port: http
+                      periodSeconds: 2
+                      timeoutSeconds: 2
+                      failureThreshold: 30
+                  livenessProbe:
+                      httpGet:
+                          path: /healthz
+                          port: http
+                      periodSeconds: 10
+                      timeoutSeconds: 3
+                  volumeMounts:
+                      - name: data
+                        mountPath: /home/hyperion/.hyperion/data
+            volumes:
+                - name: data
+                  emptyDir: {}

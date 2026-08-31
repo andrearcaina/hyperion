@@ -1,9 +1,9 @@
-.PHONY: generate build imports tidy vet \
+.PHONY: generate build install imports tidy vet \
 	test test-integration test-smoke test-chaos check \
-	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean
+	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean \
+	k8s-start k8s-stop k8s-status k8s-forward k8s-test k8s-smoke k8s-logs
 
 scenario ?= all
-DOCKER_COMPOSE = docker compose
 
 generate:
 	protoc --go_out=. --go_opt=paths=source_relative \
@@ -13,6 +13,9 @@ generate:
 build:
 	go build -o ./bin/hyprd ./cmd/hyprd
 	go build -o ./bin/hyprctl ./cmd/hyprctl
+
+install: check
+	go install ./cmd/hyprd ./cmd/hyprctl
 
 imports:
 	goimports -w .
@@ -41,27 +44,46 @@ clean:
 	rm -f ./bin/hyprd ./bin/hyprctl
 
 docker-config:
-	$(DOCKER_COMPOSE) config --quiet
+	./scripts/docker.sh config
 
 docker-build:
-	$(DOCKER_COMPOSE) build
+	./scripts/docker.sh build
 
-docker-run: docker-build
-	$(DOCKER_COMPOSE) up -d
+docker-run:
+	./scripts/docker.sh run
 
-docker-reset: docker-clean docker-run
+docker-reset:
+	./scripts/docker.sh reset
 
 docker-restart:
-	$(DOCKER_COMPOSE) restart
+	./scripts/docker.sh restart
 
 docker-stop:
-	$(DOCKER_COMPOSE) down --remove-orphans
+	./scripts/docker.sh stop
 
 docker-status:
-	$(DOCKER_COMPOSE) ps
+	./scripts/docker.sh status
 
 docker-logs:
-	$(DOCKER_COMPOSE) logs --tail=100 -f
+	./scripts/docker.sh logs
 
 docker-clean:
-	$(DOCKER_COMPOSE) down --volumes --remove-orphans
+	./scripts/docker.sh clean
+
+k8s-start:
+	./scripts/k8s.sh start
+
+k8s-stop:
+	./scripts/k8s.sh stop
+
+k8s-status:
+	./scripts/k8s.sh status
+
+k8s-forward:
+	./scripts/k8s.sh forward
+
+k8s-smoke:
+	./scripts/k8s.sh smoke
+
+k8s-logs:
+	./scripts/k8s.sh logs $(pod)

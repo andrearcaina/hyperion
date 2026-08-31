@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+    name: hyperion-bootstrap
+    namespace: hyperion
+spec:
+    backoffLimit: 20
+    template:
+        spec:
+            restartPolicy: OnFailure
+            containers:
+                - name: bootstrap
+                  image: hyperion:local
+                  imagePullPolicy: IfNotPresent
+                  command:
+                      - bootstrap.sh
+                      - http://hyperion-0.hyperion:8080
+                      - hyperion-1=hyperion-1.hyperion:9001
+                      - hyperion-2=hyperion-2.hyperion:9001

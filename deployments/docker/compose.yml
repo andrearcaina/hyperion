@@ -1,7 +1,7 @@
 services:
   node-1:
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile
     image: hyperion:local
     restart: unless-stopped
@@ -64,11 +64,10 @@ services:
       node-3:
         condition: service_healthy
     command:
-      - /bin/sh
-      - -c
-      - |
-        until hyprctl --addr http://node-1:8080 join --node-id node-2 --node-addr node-2:9001; do sleep 1; done
-        until hyprctl --addr http://node-1:8080 join --node-id node-3 --node-addr node-3:9001; do sleep 1; done
+      - bootstrap.sh
+      - http://node-1:8080
+      - node-2=node-2:9001
+      - node-3=node-3:9001
 
 volumes:
   node-1-data:
