@@ -99,9 +99,11 @@ The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes
 `network-partition` simulates a network partition between the leader and the followers.
 `sigkill` sends `SIGKILL/kill -9` to a node container, verifies that the remaining majority can
 still commit writes, restarts the killed node, and checks that it catches up.
-`concurrent-writes` runs 12 concurrent clients writing 10 key each, and then verifies every acknowledge write from another node.
+`concurrent-writes` runs 12 concurrent clients writing 10 keys each, and then verifies every acknowledge write from another node.
 `leader-churn` deliberately transfers leadership from node 1 to node 2 to node 3 and back to node 1, while verifying that writes are still committed.
 `all` runs all four scenarios in sequence.
+
+If no scenario is passed (i.e. `make test-chaos`), `all` will be run by default.
 
 ### Run Locally
 
@@ -130,22 +132,22 @@ Start each node in a separate terminal:
 
 ```bash
 hyprd --node-id n1 --node-addr 127.0.0.1:9001 \
-  --srv-port :8080 --grpc-addr :8081 --bootstrap
+    --srv-port :8080 --grpc-addr :8081 --bootstrap
 
 hyprd --node-id n2 --node-addr 127.0.0.1:9002 \
-  --srv-port :8082 --grpc-addr :8083
+    --srv-port :8082 --grpc-addr :8083
 
 hyprd --node-id n3 --node-addr 127.0.0.1:9003 \
-  --srv-port :8084 --grpc-addr :8085
+    --srv-port :8084 --grpc-addr :8085
 ```
 
 Then join the followers through node 1:
 
 ```bash
 hyprctl join --node-id n2 --node-addr 127.0.0.1:9002 \
-  --http-addr 127.0.0.1:8082 --grpc-addr 127.0.0.1:8083
+    --http-addr 127.0.0.1:8082 --grpc-addr 127.0.0.1:8083
 hyprctl join --node-id n3 --node-addr 127.0.0.1:9003 \
-  --http-addr 127.0.0.1:8084 --grpc-addr 127.0.0.1:8085
+    --http-addr 127.0.0.1:8084 --grpc-addr 127.0.0.1:8085
 ```
 
 The advertised client addresses are optional when every node uses the same
