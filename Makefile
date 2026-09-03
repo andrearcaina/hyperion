@@ -1,7 +1,7 @@
 .PHONY: generate build install imports tidy vet \
 	test test-integration test-smoke test-chaos check \
 	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean \
-	k8s-start k8s-stop k8s-status k8s-forward k8s-test k8s-smoke k8s-logs
+	kube-start kube-stop kube-status kube-forward kube-test kube-smoke kube-logs
 
 scenario ?= all
 
@@ -70,20 +70,20 @@ docker-logs:
 docker-clean:
 	./scripts/docker.sh clean
 
-k8s-start:
+kube-start:
 	./scripts/k8s.sh start
 
-k8s-stop:
+kube-stop:
 	./scripts/k8s.sh stop
 
-k8s-status:
+kube-status:
 	./scripts/k8s.sh status
 
-k8s-forward:
+kube-forward:
 	./scripts/k8s.sh forward
 
-k8s-smoke:
+kube-smoke:
 	./scripts/k8s.sh smoke
 
-k8s-logs:
+kube-logs:
 	./scripts/k8s.sh logs $(pod)

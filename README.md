@@ -67,13 +67,13 @@ For a local Kubernetes cluster, install Docker, `kubectl`, and
 [`kind`](https://kind.sigs.k8s.io/), then run:
 
 ```bash
-make k8s-start
+make kube-start
 ```
 
 This creates a disposable three-node kind cluster, builds and loads the local
 image, deploys a three-pod StatefulSet, and bootstraps the Raft group. Run
-`make k8s-smoke` for a repeatable write/read test across different pods. For
-interactive access, run `make k8s-forward` in one terminal, then use the
+`make kube-smoke` for a repeatable write/read test across different pods. For
+interactive access, run `make kube-forward` in one terminal, then use the
 Hyperion CLI from another:
 
 ```bash
@@ -81,8 +81,8 @@ hyprctl --addr http://127.0.0.1:8080 set greeting hello
 hyprctl --addr http://127.0.0.1:8080 get greeting
 ```
 
-Inspect it with `make k8s-status` or `make k8s-logs pod=hyperion-0`. Remove the
-cluster with `make k8s-stop`.
+Inspect it with `make kube-status` or `make kube-logs pod=hyperion-0`. Remove the
+cluster with `make kube-stop`.
 
 The kind deployment uses `emptyDir` storage because the cluster is intended
 for integration tests. It is not a production persistence configuration.
