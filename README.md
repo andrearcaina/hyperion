@@ -37,7 +37,7 @@ For more background information, check out [docs/](docs/) for a brief overview o
 
 ### Run with Docker Compose
 
-Start a three-node cluster:
+Start a three-node Hyperion database cluster:
 
 ```bash
 make docker-run
@@ -70,8 +70,9 @@ For a local Kubernetes cluster, install Docker, `kubectl`, and
 make kube-start
 ```
 
-This creates a disposable three-node kind cluster, builds and loads the local
-image, deploys a three-pod StatefulSet, and bootstraps the Raft group. Run
+This creates a disposable three-node Kubernetes kind cluster, builds and loads
+the local image, deploys a three-node Hyperion Raft database as a three-pod
+StatefulSet, and bootstraps the Raft group. Run
 `make kube-smoke` for a repeatable write/read test across different pods. For
 interactive access, run `make kube-forward` in one terminal, then use the
 Hyperion CLI from another:
@@ -89,7 +90,7 @@ for integration tests. It is not a production persistence configuration.
 
 #### Chaos testing
 
-With the three-node Compose cluster running (will implement for K8s later), you can run a chaos test scenario:
+With the three-node Hyperion Compose database running (will implement for K8s later), you can run a chaos test scenario:
 
 ```bash
 make test-chaos scenario=<test-scenario>
@@ -126,7 +127,7 @@ hyprctl del greeting
 HTTP on `127.0.0.1:8080` is the default. To use gRPC instead, pass
 `--protocol grpc --addr 127.0.0.1:8081`.
 
-#### Run a local three-node cluster
+#### Run a local three-node Hyperion database cluster
 
 Start each node in a separate terminal:
 
@@ -200,5 +201,7 @@ make clean    # remove local binaries
     - [x] Concurrent multi-client writes
     - [x] Leader churn
 - [ ] Do the same chaos test harness for Kubernetes
+- [ ] Expand the Hyperion database setup to five Raft nodes (separate from the three-node Kubernetes cluster)
+- [ ] Build and deploy a browser dashboard for visualizing Hyperion and Raft experiments
 - [x] Add proper integration tests for entire cluster
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)
