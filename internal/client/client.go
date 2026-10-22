@@ -35,7 +35,7 @@ type Client interface {
 	Delete(ctx context.Context, key string) error
 	List(ctx context.Context) ([]Entry, error)
 	Join(ctx context.Context, nodeID, raftAddress, httpAddress, grpcAddress string) error
-	TransferLeadership(ctx context.Context, nodeID string) error
+	MoveLeader(ctx context.Context, nodeID string) error
 	Close() error
 }
 
@@ -147,13 +147,13 @@ func (c *HTTPClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress,
 		Post("/hypr/raft/join"))
 }
 
-func (c *HTTPClient) TransferLeadership(ctx context.Context, nodeID string) error {
+func (c *HTTPClient) MoveLeader(ctx context.Context, nodeID string) error {
 	body := map[string]string{"node_id": nodeID}
 
 	return c.do(c.client.R().
 		SetContext(ctx).
 		SetBody(body).
-		Post("/hypr/raft/transfer-leadership"))
+		Post("/hypr/raft/move-leader"))
 }
 
 func (c *HTTPClient) Close() error {
@@ -256,11 +256,11 @@ func (c *GRPCClient) Join(ctx context.Context, nodeID, raftAddress, httpAddress,
 	return err
 }
 
-func (c *GRPCClient) TransferLeadership(ctx context.Context, nodeID string) error {
+func (c *GRPCClient) MoveLeader(ctx context.Context, nodeID string) error {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	_, err := c.client.TransferLeadership(ctx, &hyperionv1.TransferLeadershipRequest{NodeId: nodeID})
+	_, err := c.client.MoveLeader(ctx, &hyperionv1.MoveLeaderRequest{NodeId: nodeID})
 	return err
 }
 

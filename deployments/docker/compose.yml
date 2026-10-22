@@ -53,6 +53,40 @@ services:
       retries: 10
       start_period: 5s
 
+  node-4:
+    image: hyperion:local
+    restart: unless-stopped
+    command: ["hyprd", "--node-id", "node-4", "--node-addr", "node-4:9001"]
+    ports:
+      - "8086:8080"
+      - "8087:8081"
+      - "9004:9001"
+    volumes:
+      - node-4-data:/home/hyperion/.hyperion/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  node-5:
+    image: hyperion:local
+    restart: unless-stopped
+    command: ["hyprd", "--node-id", "node-5", "--node-addr", "node-5:9001"]
+    ports:
+      - "8088:8080"
+      - "8089:8081"
+      - "9005:9001"
+    volumes:
+      - node-5-data:/home/hyperion/.hyperion/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
   cluster-init:
     image: hyperion:local
     restart: "no"
@@ -63,13 +97,21 @@ services:
         condition: service_healthy
       node-3:
         condition: service_healthy
+      node-4:
+        condition: service_healthy
+      node-5:
+        condition: service_healthy
     command:
       - bootstrap.sh
       - http://node-1:8080
       - node-2=node-2:9001
       - node-3=node-3:9001
+      - node-4=node-4:9001
+      - node-5=node-5:9001
 
 volumes:
   node-1-data:
   node-2-data:
   node-3-data:
+  node-4-data:
+  node-5-data:

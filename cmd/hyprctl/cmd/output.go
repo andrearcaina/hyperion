@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printJSON(cmd *cobra.Command, v interface{}) error {
+func printJSON(cmd *cobra.Command, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err

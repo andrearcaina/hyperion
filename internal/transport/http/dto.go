@@ -15,7 +15,7 @@ type JoinRequest struct {
 	GRPCAddress string `json:"grpc_address,omitempty"`
 }
 
-type TransferLeadershipRequest struct {
+type MoveLeaderRequest struct {
 	NodeID string `json:"node_id"`
 }
 

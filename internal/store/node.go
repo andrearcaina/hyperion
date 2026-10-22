@@ -147,7 +147,7 @@ func (n *Node) Join(nodeID, nodeAddress string) error {
 	return nil
 }
 
-func (n *Node) TransferLeadership(nodeID string) error {
+func (n *Node) MoveLeader(nodeID string) error {
 	if !n.IsLeader() {
 		return n.notLeaderError()
 	}

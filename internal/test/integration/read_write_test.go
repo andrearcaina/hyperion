@@ -5,12 +5,20 @@ package integration
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/andrearcaina/hyperion/internal/client"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+const integrationImage = "hyperion-integration:test"
+
+var (
+	integrationImageOnce sync.Once
+	integrationImageErr  error
 )
 
 const (
@@ -24,9 +32,33 @@ type node struct {
 	grpc *client.GRPCClient
 }
 
+func ensureIntegrationImage(ctx context.Context) error {
+	integrationImageOnce.Do(func() {
+		imageBuilder, err := testcontainers.Run(ctx, "",
+			testcontainers.WithDockerfile(testcontainers.FromDockerfile{
+				Context:    "../../../",
+				Dockerfile: "Dockerfile",
+				Repo:       "hyperion-integration",
+				Tag:        "test",
+				KeepImage:  true,
+			}),
+			testcontainers.WithNoStart(),
+		)
+		if err != nil {
+			integrationImageErr = err
+			return
+		}
+		integrationImageErr = imageBuilder.Terminate(context.Background())
+	})
+	return integrationImageErr
+}
+
 func TestNodeHTTPAndGRPC(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
+	if err := ensureIntegrationImage(ctx); err != nil {
+		t.Fatalf("build integration image: %v", err)
+	}
 
 	n := startNode(t, ctx)
 	defer n.http.Close()
@@ -74,21 +106,13 @@ func TestNodeHTTPAndGRPC(t *testing.T) {
 
 func startNode(t *testing.T, ctx context.Context) *node {
 	t.Helper()
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			FromDockerfile: testcontainers.FromDockerfile{
-				Context:    "../../../",
-				Dockerfile: "Dockerfile",
-				KeepImage:  true,
-			},
-			ExposedPorts: []string{containerHTTPPort, containerGRPCPort},
-			Cmd:          []string{"hyprd", "--node-id", "integration-node", "--node-addr", "127.0.0.1:9001", "--bootstrap"},
-			WaitingFor: wait.ForHTTP("/healthz").
-				WithPort(containerHTTPPort).
-				WithStartupTimeout(90 * time.Second),
-		},
-		Started: true,
-	})
+	container, err := testcontainers.Run(ctx, integrationImage,
+		testcontainers.WithExposedPorts(containerHTTPPort, containerGRPCPort),
+		testcontainers.WithCmd("hyprd", "--node-id", "integration-node", "--node-addr", "127.0.0.1:9001", "--bootstrap"),
+		testcontainers.WithWaitStrategy(wait.ForHTTP("/healthz").
+			WithPort(containerHTTPPort).
+			WithStartupTimeout(90*time.Second)),
+	)
 	if err != nil {
 		t.Fatalf("start Hyperion container: %v", err)
 	}

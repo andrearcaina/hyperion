@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,27 +16,33 @@ type scenario struct {
 }
 
 func main() {
+	clusterName := flag.String("cluster", "docker", "cluster backend: docker or k8s")
+	flag.Parse()
+
 	input := "all"
 
-	if len(os.Args) == 2 {
-		input = os.Args[1]
-	} else if len(os.Args) > 2 {
+	if flag.NArg() == 1 {
+		input = flag.Arg(0)
+	} else if flag.NArg() > 1 {
 		fmt.Fprintln(os.Stderr, "[chaos] ERROR: too many arguments")
-		fmt.Fprintln(os.Stderr, "Usage: chaos <scenario> (default: all)")
+		fmt.Fprintln(os.Stderr, "Usage: hyprchaos [--cluster docker|k8s] [scenario]")
 		os.Exit(1)
 	}
 
-	if err := runChaos(input); err != nil {
+	if err := runChaos(*clusterName, input); err != nil {
 		fmt.Fprintln(os.Stderr, "[chaos] FAIL:", err)
 		os.Exit(1)
 	}
 }
 
-func runChaos(input string) error {
+func runChaos(clusterName, input string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	h := chaos.NewHarness()
+	h, err := chaos.NewHarness(clusterName)
+	if err != nil {
+		return err
+	}
 	scenarios := []scenario{
 		{"network-partition", h.NetworkPartitionChaos},
 		{"sigkill", h.KillChaos},

@@ -11,77 +11,54 @@ import (
 )
 
 func (h *Harness) NetworkPartitionChaos(ctx context.Context) error {
-	nodes := []string{"node-1", "node-2", "node-3"}
+	nodes := h.cluster.Nodes()
 	partitionedService := nodes[rand.IntN(len(nodes))]
-	remainingServices := make([]string, 0, len(nodes)-1)
-
-	for _, node := range nodes {
-		if node != partitionedService {
-			remainingServices = append(remainingServices, node)
-		}
-	}
+	remainingServices := otherNodes(nodes, partitionedService)
 
 	key := fmt.Sprintf("chaos-network-partition-%d", os.Getpid())
 	value := fmt.Sprintf("committed-by-majority-%d", os.Getpid())
 
-	container, err := h.docker.container(ctx, partitionedService)
-	if err != nil {
-		return err
-	}
-	if container == "" {
-		return fmt.Errorf("%s is not running; run 'make docker-run' first", partitionedService)
-	}
-
-	network, err := h.docker.network(ctx, container)
-	if err != nil {
-		return err
-	}
-
 	partitioned := false
 	defer func() {
 		if partitioned {
-			log.Printf("[chaos] reconnecting %s to %s\n", partitionedService, network)
+			log.Printf("[chaos] healing partition for %s\n", partitionedService)
 
-			if err := h.docker.connect(context.Background(), network, container, partitionedService); err != nil {
+			if err := h.cluster.Heal(context.Background(), partitionedService); err != nil {
 				fmt.Fprintln(os.Stderr, "[chaos] cleanup failed:", err)
 			}
 		}
 
-		_, _ = h.docker.node(context.Background(), remainingServices[0], "del", key)
+		_, _ = h.cluster.Node(context.Background(), remainingServices[0], "del", key)
 	}()
 
 	log.Println("[chaos] checking that the cluster accepts writes before injecting a fault")
 	if err := h.retry(ctx, func() error {
-		_, err := h.docker.node(ctx, remainingServices[0], "set", key, "baseline")
-
-		return err
+		return h.write(ctx, remainingServices, key, "baseline")
 	}); err != nil {
 		return err
 	}
 
-	log.Printf("[chaos] disconnecting %s from %s\n", partitionedService, network)
-	if err := h.docker.disconnect(ctx, network, container); err != nil {
+	log.Printf("[chaos] partitioning %s\n", partitionedService)
+	if err := h.cluster.Partition(ctx, partitionedService); err != nil {
 		return err
 	}
 	partitioned = true
 	time.Sleep(5 * time.Second)
 
 	log.Printf("[chaos] checking that isolated %s cannot commit\n", partitionedService)
-	if _, err := h.docker.node(ctx, partitionedService, "set", key, "should-not-commit"); err == nil {
+	if _, err := h.cluster.Node(ctx, partitionedService, "set", key, "should-not-commit"); err == nil {
 		return fmt.Errorf("%s unexpectedly committed a write while isolated", partitionedService)
 	}
 
 	log.Printf("[chaos] writing through the majority via %s\n", remainingServices[0])
 	if err := h.retry(ctx, func() error {
-		_, err := h.docker.node(ctx, remainingServices[0], "set", key, value)
-
-		return err
+		return h.write(ctx, remainingServices, key, value)
 	}); err != nil {
 		return err
 	}
 
 	log.Printf("[chaos] reading the committed value through %s\n", remainingServices[1])
-	actual, err := h.docker.node(ctx, remainingServices[1], "get", key)
+	actual, err := h.cluster.Node(ctx, remainingServices[1], "get", key)
 	if err != nil {
 		return err
 	}
@@ -89,15 +66,15 @@ func (h *Harness) NetworkPartitionChaos(ctx context.Context) error {
 		return fmt.Errorf("%s returned %q, want %q", remainingServices[1], actual, value)
 	}
 
-	log.Printf("[chaos] reconnecting %s to %s\n", partitionedService, network)
-	if err := h.docker.connect(ctx, network, container, partitionedService); err != nil {
+	log.Printf("[chaos] healing partition for %s\n", partitionedService)
+	if err := h.cluster.Heal(ctx, partitionedService); err != nil {
 		return err
 	}
 	partitioned = false
 
 	log.Printf("[chaos] waiting for %s to catch up\n", partitionedService)
 	if err := h.retry(ctx, func() error {
-		actual, err := h.docker.node(ctx, partitionedService, "get", key)
+		actual, err := h.cluster.Node(ctx, partitionedService, "get", key)
 		if err == nil && strings.TrimSpace(actual) != value {
 			err = fmt.Errorf("%s returned %q, want %q", partitionedService, actual, value)
 		}

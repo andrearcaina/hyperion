@@ -70,10 +70,10 @@ func (l *Logger) RequestLogger(next http.Handler) http.Handler {
 
 // FieldExtractor is a function that extracts fields from a gRPC request and response to be included in the logs.
 // It returns a map of key-value pairs. If nil, no extra fields are logged.
-type FieldExtractor func(fullMethod string, req interface{}, resp interface{}) map[string]any
+type FieldExtractor func(fullMethod string, req any, resp any) map[string]any
 
 func (l *Logger) NewGRPCLoggingInterceptor(extractor FieldExtractor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
 
 		l.Debug(ctx, "gRPC Request", "method", info.FullMethod, "payload", req)

@@ -41,7 +41,7 @@ func (s *memoryStore) Get(key string) ([]byte, error) {
 
 func (s *memoryStore) Delete(key string) error      { delete(s.values, key); return nil }
 func (s *memoryStore) Join(_, _, _, _ string) error { return nil }
-func (s *memoryStore) TransferLeadership(nodeID string) error {
+func (s *memoryStore) MoveLeader(nodeID string) error {
 	s.leadershipTransferToID = nodeID
 	return nil
 }
@@ -70,7 +70,7 @@ func (s *followerStore) Get(string) ([]byte, error)                { return nil,
 func (s *followerStore) Delete(string) error                       { return s.err }
 func (s *followerStore) ForEach(func([]byte, []byte) error) error  { return s.err }
 func (s *followerStore) Join(string, string, string, string) error { return s.err }
-func (s *followerStore) TransferLeadership(string) error           { return s.err }
+func (s *followerStore) MoveLeader(string) error                   { return s.err }
 
 func TestHandlerRoundTrip(t *testing.T) {
 	st := &memoryStore{values: make(map[string][]byte)}
@@ -94,7 +94,7 @@ func TestHandlerRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := client.TransferLeadership(ctx, &hyperionv1.TransferLeadershipRequest{NodeId: "n2"}); err != nil {
+	if _, err := client.MoveLeader(ctx, &hyperionv1.MoveLeaderRequest{NodeId: "n2"}); err != nil {
 		t.Fatal(err)
 	}
 	if st.leadershipTransferToID != "n2" {

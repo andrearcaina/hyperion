@@ -12,7 +12,7 @@ func writeError(w http.ResponseWriter, status int, err error) {
 	writeJSON(w, status, resp)
 }
 
-func writeJSON(w http.ResponseWriter, status int, resp interface{}) {
+func writeJSON(w http.ResponseWriter, status int, resp any) {
 	if status == http.StatusNoContent { // no content, no response body
 		w.WriteHeader(status)
 		return

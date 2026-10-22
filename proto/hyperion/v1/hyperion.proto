@@ -10,7 +10,7 @@ service HyperionService {
   rpc Delete(DeleteRequest) returns (DeleteResponse);
   rpc List(ListRequest) returns (ListResponse);
   rpc Join(JoinRequest) returns (JoinResponse);
-  rpc TransferLeadership(TransferLeadershipRequest) returns (TransferLeadershipResponse);
+  rpc MoveLeader(MoveLeaderRequest) returns (MoveLeaderResponse);
 }
 
 message Entry {
@@ -56,8 +56,8 @@ message JoinRequest {
 
 message JoinResponse {}
 
-message TransferLeadershipRequest {
+message MoveLeaderRequest {
   string node_id = 1;
 }
 
-message TransferLeadershipResponse {}
+message MoveLeaderResponse {}

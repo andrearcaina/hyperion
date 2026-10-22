@@ -23,7 +23,7 @@ func (s *followerStore) Get(string) ([]byte, error)                { return nil,
 func (s *followerStore) Delete(string) error                       { return s.err }
 func (s *followerStore) ForEach(func([]byte, []byte) error) error  { return s.err }
 func (s *followerStore) Join(string, string, string, string) error { return s.err }
-func (s *followerStore) TransferLeadership(string) error           { return s.err }
+func (s *followerStore) MoveLeader(string) error                   { return s.err }
 
 func TestFollowerForwardsHTTPPutToLeader(t *testing.T) {
 	transport := &recordingTransport{}
@@ -106,26 +106,26 @@ func (s *valueStore) Get(string) ([]byte, error)                { return s.value
 func (s *valueStore) Delete(string) error                       { return nil }
 func (s *valueStore) ForEach(func([]byte, []byte) error) error  { return nil }
 func (s *valueStore) Join(string, string, string, string) error { return nil }
-func (s *valueStore) TransferLeadership(string) error           { return nil }
+func (s *valueStore) MoveLeader(string) error                   { return nil }
 
-type transferStore struct {
+type moveLeaderStore struct {
 	target string
 }
 
-func (s *transferStore) Set(string, []byte) error                  { return nil }
-func (s *transferStore) Get(string) ([]byte, error)                { return nil, nil }
-func (s *transferStore) Delete(string) error                       { return nil }
-func (s *transferStore) ForEach(func([]byte, []byte) error) error  { return nil }
-func (s *transferStore) Join(string, string, string, string) error { return nil }
-func (s *transferStore) TransferLeadership(nodeID string) error {
+func (s *moveLeaderStore) Set(string, []byte) error                  { return nil }
+func (s *moveLeaderStore) Get(string) ([]byte, error)                { return nil, nil }
+func (s *moveLeaderStore) Delete(string) error                       { return nil }
+func (s *moveLeaderStore) ForEach(func([]byte, []byte) error) error  { return nil }
+func (s *moveLeaderStore) Join(string, string, string, string) error { return nil }
+func (s *moveLeaderStore) MoveLeader(nodeID string) error {
 	s.target = nodeID
 	return nil
 }
 
-func TestTransferLeadership(t *testing.T) {
-	st := &transferStore{}
+func TestMoveLeader(t *testing.T) {
+	st := &moveLeaderStore{}
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/raft/transfer-leadership", strings.NewReader(`{"node_id":"n2"}`))
+	request := httptest.NewRequest(http.MethodPost, "/raft/move-leader", strings.NewReader(`{"node_id":"n2"}`))
 
 	NewHandler(st, logger.New(nil)).ServeRoutes().ServeHTTP(recorder, request)
 

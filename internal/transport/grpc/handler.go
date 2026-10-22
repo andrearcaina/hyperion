@@ -19,7 +19,7 @@ type Store interface {
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
 	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
-	TransferLeadership(nodeID string) error
+	MoveLeader(nodeID string) error
 }
 
 type Handler struct {
@@ -104,16 +104,16 @@ func (h *Handler) Join(ctx context.Context, req *hyperionv1.JoinRequest) (*hyper
 	return &hyperionv1.JoinResponse{}, nil
 }
 
-func (h *Handler) TransferLeadership(ctx context.Context, req *hyperionv1.TransferLeadershipRequest) (*hyperionv1.TransferLeadershipResponse, error) {
-	if err := h.store.TransferLeadership(req.GetNodeId()); err != nil {
-		if response, forwarded, forwardErr := h.forwardTransferLeadership(ctx, req, err); forwarded {
+func (h *Handler) MoveLeader(ctx context.Context, req *hyperionv1.MoveLeaderRequest) (*hyperionv1.MoveLeaderResponse, error) {
+	if err := h.store.MoveLeader(req.GetNodeId()); err != nil {
+		if response, forwarded, forwardErr := h.forwardMoveLeader(ctx, req, err); forwarded {
 			return response, forwardErr
 		}
 
 		return nil, grpcError(err)
 	}
 
-	return &hyperionv1.TransferLeadershipResponse{}, nil
+	return &hyperionv1.MoveLeaderResponse{}, nil
 }
 
 func grpcError(err error) error {

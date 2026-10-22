@@ -38,7 +38,7 @@ func NewFSM(db *db.DB) (*FSM, error) {
 	return &FSM{db: db}, nil
 }
 
-func (s *FSM) Apply(log *raft.Log) interface{} {
+func (s *FSM) Apply(log *raft.Log) any {
 	var cmd writeCommand
 	if err := json.Unmarshal(log.Data, &cmd); err != nil {
 		return err

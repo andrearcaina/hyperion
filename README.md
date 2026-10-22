@@ -37,15 +37,16 @@ For more background information, check out [docs/](docs/) for a brief overview o
 
 ### Run with Docker Compose
 
-Start a three-node Hyperion database cluster:
+Start a five-node Hyperion database cluster:
 
 ```bash
 make docker-run
 ```
 
 Compose gives each node its own container and data volume, bootstraps node 1,
-and joins nodes 2 and 3. The nodes publish HTTP on ports `8080`, `8082`, and
-`8084`; gRPC on `8081`, `8083`, and `8085`; and Raft on `9001`, `9002`, and `9003`.
+and joins nodes 2 through 5. The nodes publish HTTP on ports `8080`, `8082`,
+`8084`, `8086`, and `8088`; gRPC on `8081`, `8083`, `8085`, `8087`, and `8089`;
+and Raft on `9001` through `9005`.
 
 ```bash
 docker compose -f deployments/docker/compose.yml exec node-1 \
@@ -70,11 +71,12 @@ For a local Kubernetes cluster, install Docker, `kubectl`, and
 make kube-start
 ```
 
-This creates a disposable three-node Kubernetes kind cluster, builds and loads
-the local image, deploys a three-node Hyperion Raft database as a three-pod
+This creates a disposable Kubernetes kind cluster, builds and loads
+the local image, deploys a five-node Hyperion Raft database as a five-pod
 StatefulSet, and bootstraps the Raft group. Run
-`make kube-smoke` for a repeatable write/read test across different pods. For
-interactive access, run `make kube-forward` in one terminal, then use the
+`make test-chaos scenarios=all cluster=k8s` to run the chaos scenarios against
+the Kubernetes cluster. Start the kind cluster first with `make kube-start`.
+For interactive access, run `make kube-forward` in one terminal, then use the
 Hyperion CLI from another:
 
 ```bash
@@ -88,12 +90,29 @@ cluster with `make kube-stop`.
 The kind deployment uses `emptyDir` storage because the cluster is intended
 for integration tests. It is not a production persistence configuration.
 
-#### Chaos testing
+### Automated integration tests
 
-With the three-node Hyperion Compose database running (will implement for K8s later), you can run a chaos test scenario:
+Run the Go integration suite with Docker available:
 
 ```bash
-make test-chaos scenario=<test-scenario>
+make test-integration
+```
+
+The suite includes a five-node Testcontainers cluster. It performs cross-node
+read/write verification, runs the chaos scenarios, and cleans up the temporary
+containers and network automatically.
+
+`make check` runs formatting/import maintenance, `go fix`, unit tests, the
+Testcontainers integration suite, vet, and the builds. The manual chaos suite
+is intentionally separate; run `make test-chaos` after starting a cluster with
+`make docker-run` or `make kube-start`.
+
+#### Manual chaos testing
+
+With the five-node Hyperion database running (either through Docker or Kubernetes), you can run a chaos test scenario:
+
+```bash
+make test-chaos scenarios=<scenario> cluster=<docker|k8s>
 ```
 
 The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes`, `leader-churn`, and `all`.
@@ -101,10 +120,14 @@ The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes
 `sigkill` sends `SIGKILL/kill -9` to a node container, verifies that the remaining majority can
 still commit writes, restarts the killed node, and checks that it catches up.
 `concurrent-writes` runs 12 concurrent clients writing 10 keys each, and then verifies every acknowledge write from another node.
-`leader-churn` deliberately transfers leadership from node 1 to node 2 to node 3 and back to node 1, while verifying that writes are still committed.
+`leader-churn` deliberately transfers leadership across the five nodes and back to node 1, while verifying that writes are still committed.
 `all` runs all four scenarios in sequence.
 
-If no scenario is passed (i.e. `make test-chaos`), `all` will be run by default.
+If no scenario is passed (i.e. `make test-chaos`), `all` will be run against
+Docker by default. Start the five-node Docker cluster first with
+`make docker-run`. Chaos remains a manual experiment runner; automated
+integration lifecycle belongs under Testcontainers. The Kubernetes partition
+scenario requires a network plugin that enforces `NetworkPolicy`.
 
 ### Run Locally
 
@@ -159,14 +182,14 @@ nodes share a host and therefore listen on different ports.
 
 The HTTP API is under `/hypr`:
 
-| Method   | Path                             | Operation                             |
-| -------- | -------------------------------- | ------------------------------------- |
-| `PUT`    | `/hypr/kv/{key}`                 | set a value from the raw request body |
-| `GET`    | `/hypr/kv/{key}`                 | get a value                           |
-| `DELETE` | `/hypr/kv/{key}`                 | delete a value (idempotent)           |
-| `GET`    | `/hypr/kv/`                      | list all values                       |
-| `POST`   | `/hypr/raft/join`                | add a Raft voter                      |
-| `POST`   | `/hypr/raft/transfer-leadership` | transfer leadership to a voter        |
+| Method   | Path                     | Operation                             |
+| -------- | ------------------------ | ------------------------------------- |
+| `PUT`    | `/hypr/kv/{key}`         | set a value from the raw request body |
+| `GET`    | `/hypr/kv/{key}`         | get a value                           |
+| `DELETE` | `/hypr/kv/{key}`         | delete a value (idempotent)           |
+| `GET`    | `/hypr/kv/`              | list all values                       |
+| `POST`   | `/hypr/raft/join`        | add a Raft voter                      |
+| `POST`   | `/hypr/raft/move-leader` | move leadership to a voter            |
 
 `PUT /hypr/kv/{key}` accepts a raw byte request body (up to 4 MiB). Successful
 HTTP `PUT`, `GET`, and list responses base64-encode values so arbitrary binary
@@ -200,8 +223,10 @@ make clean    # remove local binaries
     - [x] `SIGKILL/kill -9` a random node
     - [x] Concurrent multi-client writes
     - [x] Leader churn
-- [ ] Do the same chaos test harness for Kubernetes
-- [ ] Expand the Hyperion database setup to five Raft nodes (separate from the three-node Kubernetes cluster)
+- [x] Add the chaos test harness for Kubernetes
+- [x] Expand the Hyperion database setup to five Raft nodes for Docker and Kubernetes
 - [ ] Build and deploy a browser dashboard for visualizing Hyperion and Raft experiments
 - [x] Add proper integration tests for entire cluster
+- [x] Extend Testcontainers integration coverage to a five-node Raft cluster
+- [ ] Automate Kubernetes cluster startup for integration tests
 - [x] Add documentations and useful things I learnt (upkeep as much as possible)

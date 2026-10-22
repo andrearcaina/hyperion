@@ -19,7 +19,7 @@ type Store interface {
 	Delete(key string) error
 	ForEach(func(key, value []byte) error) error
 	Join(nodeID, nodeAddress, httpAddress, grpcAddress string) error
-	TransferLeadership(nodeID string) error
+	MoveLeader(nodeID string) error
 }
 
 type Handler struct {
@@ -47,7 +47,7 @@ func (h *Handler) ServeRoutes() chi.Router {
 
 	r.Route("/raft", func(r chi.Router) {
 		r.Post("/join", h.Join)
-		r.Post("/transfer-leadership", h.TransferLeadership)
+		r.Post("/move-leader", h.MoveLeader)
 	})
 
 	return r
@@ -165,8 +165,8 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) TransferLeadership(w http.ResponseWriter, r *http.Request) {
-	var req TransferLeadershipRequest
+func (h *Handler) MoveLeader(w http.ResponseWriter, r *http.Request) {
+	var req MoveLeaderRequest
 
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
 	if err != nil {
@@ -178,13 +178,13 @@ func (h *Handler) TransferLeadership(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.TransferLeadership(req.NodeID); err != nil {
+	if err := h.store.MoveLeader(req.NodeID); err != nil {
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		if h.forwardToLeader(w, r, err) {
 			return
 		}
 
-		h.logger.Error(r.Context(), "failed to transfer leadership", "error", err)
+		h.logger.Error(r.Context(), "failed to move leader", "error", err)
 		writeStoreError(w, err)
 		return
 	}

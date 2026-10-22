@@ -1,9 +1,10 @@
 .PHONY: generate build install imports tidy vet \
-	test test-integration test-smoke test-chaos check \
+	fix test test-integration test-chaos check \
 	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean \
-	kube-start kube-stop kube-status kube-forward kube-test kube-smoke kube-logs
+	kube-start kube-stop kube-status kube-forward kube-logs
 
-scenario ?= all
+scenarios ?= all
+cluster ?= docker
 
 generate:
 	protoc --go_out=. --go_opt=paths=source_relative \
@@ -26,19 +27,19 @@ tidy:
 vet:
 	go vet ./...
 
+fix:
+	go fix ./...
+
 test:
 	go test ./...
 
 test-integration:
 	go test -tags=integration ./internal/test/integration
 
-test-smoke:
-	go test -tags=smoke ./internal/test/chaos
+test-chaos: fix
+	go run ./cmd/hyprchaos --cluster $(cluster) $(scenarios)
 
-test-chaos:
-	go run ./cmd/hyprchaos $(scenario)
-
-check: tidy generate imports vet test build
+check: tidy generate imports fix test test-integration vet build
 
 clean:
 	rm -f ./bin/hyprd ./bin/hyprctl
@@ -81,9 +82,6 @@ kube-status:
 
 kube-forward:
 	./scripts/k8s.sh forward
-
-kube-smoke:
-	./scripts/k8s.sh smoke
 
 kube-logs:
 	./scripts/k8s.sh logs $(pod)
