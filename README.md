@@ -6,10 +6,11 @@ group, no sharding, no authentication, and no TLS.
 
 ### How it works
 
-Every `hyprd` process is a complete node that participates in Raft consensus and stores data in BadgerDB, exposing HTTP and gRPC APIs.
-Clients use `hyprctl` to send requests through either API, and both feed into the same store.
-Raft elects one node as the leader and replicates each write through a majority of the cluster before applying it to BadgerDB.
-BoltDB keeps the Raft state, while BadgerDB holds the user-visible key-value data.
+Every `hyprd` process is a complete node. It exposes HTTP and gRPC APIs, stores
+the user-visible key-value data in BadgerDB, and participates in one Raft group.
+The HTTP and gRPC APIs feed into the same store. The leader serves linearizable
+reads and sends writes through Raft, which replicates them to a majority before
+each node applies them to its local store. BoltDB stores Raft's local state.
 
 ```text
                          Raft TCP :9001
@@ -18,10 +19,10 @@ HTTP :8080 ─┐          ┌────────────────�
 gRPC :8081 ─┘          └────────────────┘
 ```
 
-Clients (Users) can connect to any node. If a request reaches a follower, its HTTP
-handler acts as a reverse proxy to the current leader, while its gRPC handler
-calls the same RPC on the leader. The leader then serves the linearizable read
-or coordinates the write through Raft.
+Clients can connect to any node. If a request reaches a follower, the HTTP
+handler reverse-proxies it to the current leader, while the gRPC handler
+forwards the same RPC. The leader then serves the read or coordinates the
+write through Raft.
 
 ```text
                          forwarded request
@@ -33,7 +34,45 @@ Client ──────> Follower ──────────────�
 
 Data is stored under `~/.hyperion/data/<node-id>`.
 
-For more background information, check out [docs/](docs/) for a brief overview of Raft, distributed KV stores, CAP theorem, and PACELC theorem.
+For background on the design, see the brief guides in [docs/](docs/):
+[distributed key-value stores](docs/distributed-kv-db.md), [Raft](docs/raft.md),
+[CAP](docs/cap-theorem.md), and [PACELC](docs/pacelc-theorem.md).
+
+### How to develop locally
+
+Make sure Git is installed, and WSL/Linux is preferered. Hyperion is developed
+and tested in a Unix-like environment; its Make targets and shell scripts assume
+tools such as `sh`, `make`, and standard Unix commands. Haven't tested on a Windows
+environment.
+
+You will also need:
+
+- Go 1.26.7 or a compatible newer version
+- Docker and Docker Compose for the local cluster and integration tests
+- `kubectl` and [`kind`](https://kind.sigs.k8s.io/) for the Kubernetes workflow
+
+Clone the repository and enter its directory:
+
+```bash
+git clone https://github.com/andrearcaina/hyperion.git
+cd hyperion
+```
+
+Before running a database, validate the development environment:
+
+```bash
+make check
+```
+
+This runs formatting and imports maintenance, code generation, tests, vet,
+and the builds. Other useful development commands are:
+
+Other useful development commands are:
+
+```bash
+make generate # regenerate protobuf bindings
+make clean    # remove local binaries
+```
 
 ### Run with Docker Compose
 
@@ -73,11 +112,8 @@ make kube-start
 
 This creates a disposable Kubernetes kind cluster, builds and loads
 the local image, deploys a five-node Hyperion Raft database as a five-pod
-StatefulSet, and bootstraps the Raft group. Run
-`make test-chaos scenarios=all cluster=k8s` to run the chaos scenarios against
-the Kubernetes cluster. Start the kind cluster first with `make kube-start`.
-For interactive access, run `make kube-forward` in one terminal, then use the
-Hyperion CLI from another:
+StatefulSet, and bootstraps the Raft group. For interactive access, run
+`make kube-forward` in one terminal, then use the Hyperion CLI from another:
 
 ```bash
 hyprctl --addr http://127.0.0.1:8080 set greeting hello
@@ -102,11 +138,6 @@ The suite includes a five-node Testcontainers cluster. It performs cross-node
 read/write verification, runs the chaos scenarios, and cleans up the temporary
 containers and network automatically.
 
-`make check` runs formatting/import maintenance, `go fix`, unit tests, the
-Testcontainers integration suite, vet, and the builds. The manual chaos suite
-is intentionally separate; run `make test-chaos` after starting a cluster with
-`make docker-run` or `make kube-start`.
-
 #### Manual chaos testing
 
 With the five-node Hyperion database running (either through Docker or Kubernetes), you can run a chaos test scenario:
@@ -129,7 +160,7 @@ Docker by default. Start the five-node Docker cluster first with
 integration lifecycle belongs under Testcontainers. The Kubernetes partition
 scenario requires a network plugin that enforces `NetworkPolicy`.
 
-### Run Locally
+### Run on local environment
 
 Build and start one node:
 
@@ -198,19 +229,11 @@ data is preserved; for example, `{"key":"greeting","value":"aGVsbG8="}`.
 The gRPC contract is in [`proto/hyperion/v1/hyperion.proto`](proto/hyperion/v1/hyperion.proto). The
 server supports gRPC health checking and reflection.
 
-### Development
-
-```bash
-make check    # tidy, generate, imports, vet, test, and build
-make generate # regenerate protobuf bindings
-make clean    # remove local binaries
-```
-
 ### Roadmap
 
 - [x] Create file structure
 - [x] Get working DB and spin HTTP server with `hyprd`
-- [x] Implement Raft for consensus between nodes (single node for now)
+- [x] Implement Raft for consensus between nodes
     - [x] Add support for clustering and replication
     - [x] Support leader-only linearizable reads and writes
     - [x] Allow requests through any node by forwarding them to the leader
