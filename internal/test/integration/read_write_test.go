@@ -131,12 +131,12 @@ func startNode(t *testing.T, ctx context.Context) *node {
 		t.Fatalf("resolve gRPC port: %v", err)
 	}
 
-	httpClient := client.NewHTTP(
+	httpClient := client.NewHTTPClient(
 		fmt.Sprintf("http://%s:%s", host, httpPort.Port()),
 		clientTimeout,
 	)
 
-	grpcClient, err := client.NewGRPC(
+	grpcClient, err := client.NewGRPCClient(
 		fmt.Sprintf("%s:%s", host, grpcPort.Port()),
 		clientTimeout,
 	)

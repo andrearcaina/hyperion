@@ -143,7 +143,7 @@ containers and network automatically.
 With the five-node Hyperion database running (either through Docker or Kubernetes), you can run a chaos test scenario:
 
 ```bash
-make test-chaos scenarios=<scenario> cluster=<docker|k8s>
+make test-chaos scenario=<scenario> cluster=<docker|k8s>
 ```
 
 The implemented scenarios are `network-partition`, `sigkill`, `concurrent-writes`, `leader-churn`, and `all`.

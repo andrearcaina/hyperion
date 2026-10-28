@@ -3,7 +3,7 @@
 	docker-config docker-build docker-run docker-reset docker-restart docker-stop docker-status docker-logs docker-clean \
 	kube-start kube-stop kube-status kube-forward kube-logs
 
-scenarios ?= all
+scenario ?= all
 cluster ?= docker
 
 generate:
@@ -37,7 +37,7 @@ test-integration:
 	go test -tags=integration ./internal/test/integration
 
 test-chaos: fix
-	go run ./cmd/hyprchaos --cluster $(cluster) $(scenarios)
+	go run ./cmd/hyprchaos -s $(scenario) -c $(cluster)
 
 check: tidy generate imports fix test test-integration vet build
 

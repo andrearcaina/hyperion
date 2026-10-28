@@ -30,20 +30,22 @@ It can read and write keys, list values, and manage Raft node joins.`,
 			if serverAddr == "" {
 				serverAddr = "http://127.0.0.1:8080"
 			}
-			hyprClient = client.NewHTTP(serverAddr, requestTimeout)
+			hyprClient = client.NewHTTPClient(serverAddr, requestTimeout)
 		case "grpc":
 			if serverAddr == "" {
 				serverAddr = "127.0.0.1:8081"
 			}
 			var err error
-			hyprClient, err = client.NewGRPC(serverAddr, requestTimeout)
+			hyprClient, err = client.NewGRPCClient(serverAddr, requestTimeout)
 			return err
 		default:
 			return fmt.Errorf("unsupported protocol %q (use http or grpc)", protocol)
 		}
 		return nil
 	},
-	PersistentPostRunE: func(cmd *cobra.Command, args []string) error { return hyprClient.Close() },
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		return hyprClient.Close()
+	},
 }
 
 func Execute() {
